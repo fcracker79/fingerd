@@ -1,0 +1,143 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: f5276fdb6c41992f9c9ca20f7d3785e9fe64931f806b7cc1f4fbc16f1670ab0b
+
+name:           fingerd
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/fcracker79/fingerd#readme>
+homepage:       https://github.com/fcracker79/fingerd#readme
+bug-reports:    https://github.com/fcracker79/fingerd/issues
+author:         Mirko Bonasorte
+maintainer:     mirko@mirko.io
+copyright:      2021 Mirko Bonasorte
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/fcracker79/fingerd
+
+library
+  exposed-modules:
+      Debug
+      Main
+      User
+  other-modules:
+      Paths_fingerd
+  hs-source-dirs:
+      src
+  default-extensions: TypeSynonymInstances FlexibleInstances MonadComprehensions FlexibleContexts RankNTypes TypeOperators UndecidableInstances MultiParamTypeClasses FunctionalDependencies OverloadedStrings LambdaCase TupleSections
+  build-depends:
+      aeson >=1.4.7.1
+    , base >=4.7 && <5
+    , bytestring
+    , containers >=0.6.2.1
+    , managed >=1.0.8
+    , monad-loops >=0.4.3
+    , mtl >=2.2.2
+    , network
+    , random >=1.2
+    , sqlite-simple
+    , text >=1.2.4.0
+    , text-format-simple
+    , transformers >=0.5.2.0
+    , unordered-containers
+    , vector
+  default-language: Haskell2010
+
+executable fingerd
+  main-is: Main.hs
+  hs-source-dirs:
+      src
+  default-extensions: TypeSynonymInstances FlexibleInstances MonadComprehensions FlexibleContexts RankNTypes TypeOperators UndecidableInstances MultiParamTypeClasses FunctionalDependencies OverloadedStrings LambdaCase TupleSections
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
+  build-depends:
+      aeson >=1.4.7.1
+    , base >=4.7 && <5
+    , bytestring
+    , containers >=0.6.2.1
+    , fingerd
+    , managed >=1.0.8
+    , monad-loops >=0.4.3
+    , mtl >=2.2.2
+    , network
+    , random >=1.2
+    , sqlite-simple
+    , text >=1.2.4.0
+    , text-format-simple
+    , transformers >=0.5.2.0
+    , unordered-containers
+    , vector
+  default-language: Haskell2010
+
+test-suite integration
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_fingerd
+  hs-source-dirs:
+      test/integration
+  default-extensions: TypeSynonymInstances FlexibleInstances MonadComprehensions FlexibleContexts RankNTypes TypeOperators UndecidableInstances MultiParamTypeClasses FunctionalDependencies OverloadedStrings LambdaCase TupleSections
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HUnit
+    , aeson >=1.4.7.1
+    , base >=4.7 && <5
+    , bytestring
+    , containers >=0.6.2.1
+    , fingerd
+    , hspec
+    , managed >=1.0.8
+    , monad-loops >=0.4.3
+    , mtl >=2.2.2
+    , network
+    , random >=1.2
+    , sqlite-simple
+    , test-framework
+    , test-framework-hunit
+    , text >=1.2.4.0
+    , text-format-simple
+    , transformers >=0.5.2.0
+    , unordered-containers
+    , vector
+  default-language: Haskell2010
+
+test-suite unit
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_fingerd
+  hs-source-dirs:
+      test/unit
+  default-extensions: TypeSynonymInstances FlexibleInstances MonadComprehensions FlexibleContexts RankNTypes TypeOperators UndecidableInstances MultiParamTypeClasses FunctionalDependencies OverloadedStrings LambdaCase TupleSections
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HUnit
+    , aeson >=1.4.7.1
+    , base >=4.7 && <5
+    , bytestring
+    , containers >=0.6.2.1
+    , hspec
+    , managed >=1.0.8
+    , monad-loops >=0.4.3
+    , mtl >=2.2.2
+    , network
+    , programminghaskell
+    , random >=1.2
+    , sqlite-simple
+    , test-framework
+    , test-framework-hunit
+    , text >=1.2.4.0
+    , text-format-simple
+    , transformers >=0.5.2.0
+    , unordered-containers
+    , vector
+  default-language: Haskell2010
