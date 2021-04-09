@@ -35,6 +35,9 @@ dependencies:
 - vector
 - network
 - sqlite-simple
+- raw-strings-qq
+- resource-pool
+
 library:
   source-dirs: src
 

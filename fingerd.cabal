@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f5276fdb6c41992f9c9ca20f7d3785e9fe64931f806b7cc1f4fbc16f1670ab0b
+-- hash: b7926535624f10f1d163594e21cb9b689841e48cb7067482c753a00bcf839d91
 
 name:           fingerd
 version:        0.1.0.0
@@ -28,8 +28,10 @@ source-repository head
 library
   exposed-modules:
       Debug
+      Domain.User
       Main
-      User
+      Repository.Database
+      Repository.UserRepository
   other-modules:
       Paths_fingerd
   hs-source-dirs:
@@ -45,6 +47,8 @@ library
     , mtl >=2.2.2
     , network
     , random >=1.2
+    , raw-strings-qq
+    , resource-pool
     , sqlite-simple
     , text >=1.2.4.0
     , text-format-simple
@@ -70,6 +74,8 @@ executable fingerd
     , mtl >=2.2.2
     , network
     , random >=1.2
+    , raw-strings-qq
+    , resource-pool
     , sqlite-simple
     , text >=1.2.4.0
     , text-format-simple
@@ -100,6 +106,8 @@ test-suite integration
     , mtl >=2.2.2
     , network
     , random >=1.2
+    , raw-strings-qq
+    , resource-pool
     , sqlite-simple
     , test-framework
     , test-framework-hunit
@@ -132,6 +140,8 @@ test-suite unit
     , network
     , programminghaskell
     , random >=1.2
+    , raw-strings-qq
+    , resource-pool
     , sqlite-simple
     , test-framework
     , test-framework-hunit
