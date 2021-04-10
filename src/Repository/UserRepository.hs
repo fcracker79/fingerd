@@ -79,3 +79,14 @@ returnUsers :: Connection -> IO [UserName]
 returnUsers dbConn = do
   rows <- query_ dbConn allUsers
   return $ map username rows
+
+
+saveUser :: Connection -> User -> IO UserName
+saveUser dbConn user = do
+    existingUser <- runMaybeT $ getUser dbConn $ username user
+    -- TODO there must be a better way to do thid
+    case existingUser of
+      Nothing -> do
+        execute dbConn insertUser $ toRow user
+        return $ username user
+      _ -> return $ username user

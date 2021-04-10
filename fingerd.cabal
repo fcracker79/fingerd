@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9806493746fe7de75c77f6e0d1df402feee64a5df50fd2fbe101565928673d27
+-- hash: 0aae737b77a485aa69a705883cf421181942e1a0660d65088fffcc043d8f8e9d
 
 name:           fingerd
 version:        0.1.0.0
@@ -54,6 +54,7 @@ library
     , sqlite-simple
     , text
     , text-format-simple
+    , threads
     , transformers
     , unordered-containers
     , vector
@@ -89,6 +90,7 @@ executable fingerd
     , sqlite-simple
     , text
     , text-format-simple
+    , threads
     , transformers
     , unordered-containers
     , vector
@@ -123,6 +125,7 @@ test-suite integration
     , test-framework-hunit
     , text
     , text-format-simple
+    , threads
     , transformers
     , unordered-containers
     , vector
@@ -157,6 +160,7 @@ test-suite unit
     , test-framework-hunit
     , text
     , text-format-simple
+    , threads
     , transformers
     , unordered-containers
     , vector

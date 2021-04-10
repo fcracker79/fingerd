@@ -11,8 +11,10 @@ import Data.List (intersperse)
 
 
 data Request = ReqUser Text | ReqUsers
+data EditRequest = SaveUser User | DeleteUser UserName | UpdateUser User 
 
 type Respond m = Request -> m ByteString
+type EditRespond m = EditRequest -> m ByteString
 
 renderUser :: Maybe User -> ByteString
 renderUser Nothing = "No such user"

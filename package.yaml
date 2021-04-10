@@ -37,6 +37,7 @@ dependencies:
 - transformers 
 - unordered-containers
 - vector
+- threads
 
 library:
   source-dirs: src
@@ -81,6 +82,7 @@ tests:
       - test-framework-hunit
       - hspec
       - fingerd
+      - threads
 
 default-extensions:
   - TypeSynonymInstances
