@@ -5,7 +5,7 @@ module TCPServer where
 import Control.Monad (forever, void)
 import Data.ByteString (ByteString)
 import Data.Text (Text)
-import Data.Text.Encoding
+import Data.Text.Encoding ( decodeUtf8 )
 import Network.Socket
   ( AddrInfo (addrAddress, addrFamily, addrFlags)
   , AddrInfoFlag (AI_PASSIVE)
@@ -22,9 +22,9 @@ import Network.Socket
   , withSocketsDo, ServiceName
   )
 import Network.Socket.ByteString (recv, send, sendAll)
-import Repository.UserRepository
-import Service
+import Service ( Respond, Request(ReqUser, ReqUsers) )
 import Control.Monad.Managed
+    ( runManaged, MonadIO(liftIO), Managed )
 
 {- logAndEcho :: Socket -> IO ()
 logAndEcho sock = forever $ do
