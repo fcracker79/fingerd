@@ -10,11 +10,13 @@ import Data.ByteString (ByteString)
 import Data.Pool (Pool, withResource)
 import qualified Data.Text as T
 import Database.SQLite.Simple (Connection (Connection))
-import Domain.User (User, UserName)
+import Domain.User (User (username), UserName)
 import Repository.Database (executeM)
 import qualified Repository.UserRepository as R
 import Service
-  ( RequestG (UserReq, UsersReq)
+  ( EditRequest (DeleteUser, SaveUser, UpdateUser)
+  , EditRespond
+  , RequestG (UserReq, UsersReq)
   , RespondG (..)
   , ResponseG (UserResp, UsersResp)
   )
@@ -32,3 +34,11 @@ responder :: MonadManaged m => Pool Connection -> RespondG m
 responder pool = RespondG \case
   UsersReq -> UsersResp <$> getAllUserNames pool
   UserReq user -> UserResp <$> getUser pool user
+
+
+responderForEdit :: MonadManaged m => Pool Connection -> EditRespond m
+responderForEdit pool (SaveUser user) = executeM pool $ \conn -> do
+  R.saveUser conn user
+  return "OK"
+responderForEdit pool (UpdateUser user) = return "TODO UPDATE"
+responderForEdit pool (DeleteUser userName) = return "TODO DELETE"

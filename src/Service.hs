@@ -19,6 +19,9 @@ data GetK = GetUserK | GetUsersK
 data RequestG a where
   UsersReq :: RequestG GetUsersK
   UserReq :: Text -> RequestG GetUserK
+data EditRequest = SaveUser User | DeleteUser UserName | UpdateUser User 
+
+type EditRespond m = EditRequest -> m ByteString
 
 data ResponseG a where
   UsersResp :: [UserName] -> ResponseG GetUsersK
