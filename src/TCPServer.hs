@@ -41,7 +41,7 @@ handleQuery parse respond soc = void $ do
     Nothing -> liftIO . send soc $ "not parse"
     Just input -> do
       Response output <- applyRespond respond input
-      liftIO . send soc . serialize $ output
+      liftIO . send soc . render $ output
 
 server :: ServiceName -> (Socket -> Managed ()) -> IO ()
 server port handler = withSocketsDo $ do

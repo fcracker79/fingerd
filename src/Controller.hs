@@ -34,12 +34,12 @@ data ResponseG v a where
 
 newtype RespondG v m = RespondG (forall a. RequestG v a -> m (ResponseG v a))
 
-serialize :: ResponseG v a -> ByteString
-serialize (GetUserResp n) = renderUser n
-serialize (GetUsersResp n) = renderUsers n
-serialize SaveUserResp = "OK"
-serialize DeleteUserResp = "not implemented"
-serialize UpdateUserResp = "not implemented"
+render :: ResponseG v a -> ByteString
+render (GetUserResp n) = renderUser n
+render (GetUsersResp n) = renderUsers n
+render SaveUserResp = "OK"
+render DeleteUserResp = "not implemented"
+render UpdateUserResp = "not implemented"
 
 data Request v = forall a. Request (RequestG v a)
 
@@ -53,10 +53,10 @@ type Parser v = ByteString -> Maybe (Request v)
 parseQuery :: Parser ServiceQueryK
 parseQuery = \case
   "\r\n" -> Just $ Request GetUsersReq
-  name -> Just $ Request $ GetUserReq (T.strip $ decodeUtf8 name) 
- 
-parseEdit :: Parser ServiceEditK 
-parseEdit = \case 
+  name -> Just $ Request $ GetUserReq (T.strip $ decodeUtf8 name)
+
+parseEdit :: Parser ServiceEditK
+parseEdit = \case
   "+\r\n" -> Just $ Request $ SaveUserReq $ error "notImplemented"
   "-\r\n" -> Just $ Request $ DeleteUserReq $ error "notImplemented"
   "~\r\n" -> Just $ Request $ UpdateUserReq $ error "notImplemented"
