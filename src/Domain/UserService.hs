@@ -35,5 +35,5 @@ responderEdit pool = RespondG \case
   SaveUserReq user -> executeM pool $ \conn -> do
     R.saveUser conn user
     pure SaveUserResp
-  UpdateUserReq user -> pure DeleteUserResp
-  DeleteUserReq userName -> pure UpdateUserResp
+  UpdateUserReq user -> pure UpdateUserResp
+  DeleteUserReq userName -> pure DeleteUserResp

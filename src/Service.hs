@@ -21,16 +21,16 @@ data Service = ServiceQueryK | ServiceEditK
 data RequestG v a where
   GetUsersReq :: RequestG ServiceQueryK GetUsersK
   GetUserReq :: Text -> RequestG ServiceQueryK GetUserK
-  SaveUserReq :: User -> RequestG ServiceEditK GetUserK
-  DeleteUserReq :: UserName -> RequestG ServiceEditK GetUserK
-  UpdateUserReq :: User -> RequestG ServiceEditK GetUserK
+  SaveUserReq :: User -> RequestG ServiceEditK SaveUserK
+  DeleteUserReq :: UserName -> RequestG ServiceEditK DeleteUserK
+  UpdateUserReq :: User -> RequestG ServiceEditK UpdateUserK
 
 data ResponseG v a where
   GetUsersResp :: [UserName] -> ResponseG ServiceQueryK GetUsersK
   GetUserResp :: Maybe User -> ResponseG ServiceQueryK GetUserK
-  SaveUserResp :: ResponseG ServiceEditK GetUserK
-  DeleteUserResp :: ResponseG ServiceEditK GetUserK
-  UpdateUserResp :: ResponseG ServiceEditK GetUserK
+  SaveUserResp :: ResponseG ServiceEditK SaveUserK
+  DeleteUserResp :: ResponseG ServiceEditK DeleteUserK
+  UpdateUserResp :: ResponseG ServiceEditK UpdateUserK
 
 newtype RespondG v m = RespondG (forall a. RequestG v a -> m (ResponseG v a))
 
