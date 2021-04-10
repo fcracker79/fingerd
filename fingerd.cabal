@@ -51,6 +51,7 @@ library
       TupleSections
   build-depends:
       aeson
+    , attoparsec
     , base >=4.7 && <5
     , bytestring
     , containers
@@ -98,6 +99,7 @@ executable fingerd
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
   build-depends:
       aeson
+    , attoparsec
     , base >=4.7 && <5
     , bytestring
     , containers
@@ -142,6 +144,7 @@ test-suite integration
   build-depends:
       HUnit
     , aeson
+    , attoparsec
     , base >=4.7 && <5
     , bytestring
     , containers
@@ -189,6 +192,7 @@ test-suite unit
   build-depends:
       HUnit
     , aeson
+    , attoparsec
     , base >=4.7 && <5
     , bytestring
     , containers

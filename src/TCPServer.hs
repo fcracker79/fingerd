@@ -36,11 +36,11 @@ import Network.Socket.ByteString (recv, send, sendAll)
 
 type ServerHandler = Socket -> Managed ()
 
-handleQuery
+serverHandler
   :: Parser v -- ^ a parser for the 'v' service
   -> Respond v Managed -- ^ handler for 'v' domain requests
   -> ServerHandler
-handleQuery parse respond soc = void $ do
+serverHandler parse respond soc = void $ do
   msg <- liftIO $ recv soc 1024
   case parse msg of
     Nothing -> liftIO . send soc $ "not parse"

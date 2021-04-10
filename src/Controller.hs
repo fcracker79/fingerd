@@ -14,26 +14,32 @@ import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf16BE, encodeUtf8)
 import Domain.User (User (..), UserName, renderUser, renderUsers)
 
-data RequestK = GetUserK | GetUsersK | SaveUserK | DeleteUserK | UpdateUserK
+-- | index the API in types
+data APIPoints = GetUserAPI | GetUsersAPI | SaveUserAPI | DeleteUserAPI | UpdateUserAPI
 
-data Service = ServiceQueryK | ServiceEditK
+-- | index the 2 services in types
+data ServiceKind = ServiceQueryType | ServiceEditType
 
+-- | all requests with their arguments indexed by API point and service types
 data RequestG v a where
-  GetUsersReq :: RequestG ServiceQueryK GetUsersK
-  GetUserReq :: Text -> RequestG ServiceQueryK GetUserK
-  SaveUserReq :: User -> RequestG ServiceEditK SaveUserK
-  DeleteUserReq :: UserName -> RequestG ServiceEditK DeleteUserK
-  UpdateUserReq :: User -> RequestG ServiceEditK UpdateUserK
+  GetUsersReq :: RequestG ServiceQueryType GetUsersAPI
+  GetUserReq :: Text -> RequestG ServiceQueryType GetUserAPI
+  SaveUserReq :: User -> RequestG ServiceEditType SaveUserAPI
+  DeleteUserReq :: UserName -> RequestG ServiceEditType DeleteUserAPI
+  UpdateUserReq :: User -> RequestG ServiceEditType UpdateUserAPI
 
+-- | all responses with their arguments indexed by API point and service types
 data ResponseG v a where
-  GetUsersResp :: [UserName] -> ResponseG ServiceQueryK GetUsersK
-  GetUserResp :: Maybe User -> ResponseG ServiceQueryK GetUserK
-  SaveUserResp :: ResponseG ServiceEditK SaveUserK
-  DeleteUserResp :: ResponseG ServiceEditK DeleteUserK
-  UpdateUserResp :: ResponseG ServiceEditK UpdateUserK
+  GetUsersResp :: [UserName] -> ResponseG ServiceQueryType GetUsersAPI
+  GetUserResp :: Maybe User -> ResponseG ServiceQueryType GetUserAPI
+  SaveUserResp :: ResponseG ServiceEditType SaveUserAPI
+  DeleteUserResp :: ResponseG ServiceEditType DeleteUserAPI
+  UpdateUserResp :: ResponseG ServiceEditType UpdateUserAPI
 
+-- | a generic handler for any request that has to produce the right type of response
 newtype Respond v m = Respond (forall a. RequestG v a -> m (ResponseG v a))
 
+-- | render all responses
 render :: ResponseG v a -> ByteString
 render (GetUserResp n) = renderUser n
 render (GetUsersResp n) = renderUsers n
@@ -41,22 +47,29 @@ render SaveUserResp = "OK"
 render DeleteUserResp = "not implemented"
 render UpdateUserResp = "not implemented"
 
+-- | any request for a 'v' service
 data Request v = forall a. Request (RequestG v a)
 
+-- | any response for a 'v' service
 data Response v = forall a. Response (ResponseG v a)
 
+-- | apply a respond handler to a request for the 'v' service
 applyRespond :: Functor m => Respond v m -> Request v -> m (Response v)
 applyRespond (Respond f) (Request x) = Response <$> f x
 
+-- | parse any request, TODO use attoparsec
 type Parser v = ByteString -> Maybe (Request v)
 
-parseQuery :: Parser ServiceQueryK
+-- | parser for the ServiceQueryType 
+parseQuery :: Parser ServiceQueryType
 parseQuery = \case
   "\r\n" -> Just $ Request GetUsersReq
   name -> Just $ Request $ GetUserReq (T.strip $ decodeUtf8 name)
 
-parseEdit :: Parser ServiceEditK
+-- | parser for the ServiceEditType 
+parseEdit :: Parser ServiceEditType
 parseEdit = \case
   "+\r\n" -> Just $ Request $ SaveUserReq $ error "notImplemented"
   "-\r\n" -> Just $ Request $ DeleteUserReq $ error "notImplemented"
   "~\r\n" -> Just $ Request $ UpdateUserReq $ error "notImplemented"
+  _ -> Nothing 
