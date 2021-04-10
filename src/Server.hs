@@ -14,7 +14,7 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Data.ByteString.Internal (w2c)
 import Data.Text (Text)
-import Data.Text.Encoding (decodeUtf8)
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Domain.User
 import Network.Socket
   ( AddrInfo (addrAddress, addrFamily, addrFlags)
@@ -33,18 +33,20 @@ import Network.Socket
   , withSocketsDo
   )
 import Network.Socket.ByteString (recv, send, sendAll)
+import Data.Attoparsec.ByteString.Char8
+import qualified Data.Text as T
 
 type ServerHandler = Socket -> Managed ()
 
 serverHandler
-  :: Parser v -- ^ a parser for the 'v' service
+  :: Parser (Request v) -- ^ a parser for the 'v' service
   -> Respond v Managed -- ^ handler for 'v' domain requests
   -> ServerHandler
 serverHandler parse respond soc = void $ do
   msg <- liftIO $ recv soc 1024
-  case parse msg of
-    Nothing -> liftIO . send soc $ "not parse"
-    Just input -> do
+  case parseOnly parse msg of
+    Left e -> liftIO . send soc $ "not parse: " <> encodeUtf8 (T.pack e)
+    Right input -> do
       Response output <- respond `applyRespond` input
       liftIO . send soc . render $ output
 

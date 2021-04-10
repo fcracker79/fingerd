@@ -6,6 +6,8 @@
 
 module Controller where
 
+import Control.Applicative ((<|>))
+import Data.Attoparsec.ByteString.Char8
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Data.List (intersperse)
@@ -58,18 +60,17 @@ applyRespond :: Functor m => Respond v m -> Request v -> m (Response v)
 applyRespond (Respond f) (Request x) = Response <$> f x
 
 -- | parse any request, TODO use attoparsec
-type Parser v = ByteString -> Maybe (Request v)
+-- type Parser v = ByteString -> Maybe (Request v)
 
--- | parser for the ServiceQueryType 
-parseQuery :: Parser ServiceQueryType
-parseQuery = \case
-  "\r\n" -> Just $ Request GetUsersReq
-  name -> Just $ Request $ GetUserReq (T.strip $ decodeUtf8 name)
+-- | parser for the ServiceQueryType
+parseQuery :: Parser (Request ServiceQueryType)
+parseQuery =
+  Request GetUsersReq <$ string "\r\n"
+    <|> Request . GetUserReq . T.strip . decodeUtf8 <$> takeByteString
 
--- | parser for the ServiceEditType 
-parseEdit :: Parser ServiceEditType
-parseEdit = \case
-  "+\r\n" -> Just $ Request $ SaveUserReq $ error "notImplemented"
-  "-\r\n" -> Just $ Request $ DeleteUserReq $ error "notImplemented"
-  "~\r\n" -> Just $ Request $ UpdateUserReq $ error "notImplemented"
-  _ -> Nothing 
+-- | parser for the ServiceEditType
+parseEdit :: Parser (Request ServiceEditType)
+parseEdit =
+  Request . SaveUserReq <$> error "notImplemented"
+    <|> Request . DeleteUserReq <$> error "notImplemented"
+    <|> Request . UpdateUserReq <$> error "notImplemented"
