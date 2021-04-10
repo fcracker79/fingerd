@@ -4,13 +4,15 @@
 module Repository.UserRepository where
 
 
-import Domain.User(User(..))
+import Domain.User(User(..), UserName)
 import Database.SQLite.Simple (FromRow(..), ToRow(..), field, Query, execute_, execute, query_, close, Connection, query, Only(..))
 import Text.RawString.QQ ( r )
 import Control.Exception (Exception, throwIO)
 import Database.SQLite.Simple.Types ( Query, Null(..) )
-import Data.Text (Text)
-
+import Control.Monad.Trans.Maybe (MaybeT(MaybeT), runMaybeT)
+import qualified Data.Text as T
+import Control.Monad.IO.Class (MonadIO(liftIO))
+import Control.Applicative (empty)
 
 instance FromRow User where
     fromRow = User <$> field
@@ -48,11 +50,11 @@ getUserQuery = "SELECT * from users where username = ?"
 data DuplicateData = DuplicateData deriving (Eq, Show)
 instance Exception DuplicateData
 
-type UserRow = (Null, Text, Text, Text, Text, Text)
+type UserRow = (Null, T.Text, T.Text, T.Text, T.Text, T.Text)
 createDatabase :: Connection -> IO ()
 createDatabase conn = do
     execute_ conn createUsers
-    user <- getUser conn userName
+    user <- runMaybeT $ getUser conn userName
     case user of
       Nothing -> execute conn insertUser meRow
       _ -> return ()
@@ -62,10 +64,16 @@ createDatabase conn = do
           meRow = (Null, userName, "/bin/zsh", "/home/callen", "Chris Allen", "555-123-4567")
           userName = "callen"
 
-getUser :: Connection -> Text -> IO (Maybe User)
+getUser :: Connection -> UserName -> MaybeT IO User
 getUser conn username = do
-    results <- query conn getUserQuery (Only username)
+    results <- liftIO (query conn getUserQuery (Only username))
     case results of
-      [] -> return $ Nothing
-      [user] -> return $ Just user
-      _ -> throwIO DuplicateData
+      [] -> empty
+      [user] -> return user
+      _ -> (liftIO . throwIO) DuplicateData
+
+
+returnUsers :: Connection -> IO [UserName]
+returnUsers dbConn = do
+  rows <- query_ dbConn allUsers
+  return $ map username rows

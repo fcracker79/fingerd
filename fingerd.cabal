@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b7926535624f10f1d163594e21cb9b689841e48cb7067482c753a00bcf839d91
+-- hash: 0c64987a853566bdfedc4c9acddb227738ffb45e0561cfabee2eec408b87cad1
 
 name:           fingerd
 version:        0.1.0.0
@@ -29,9 +29,11 @@ library
   exposed-modules:
       Debug
       Domain.User
+      Domain.UserService
       Main
       Repository.Database
       Repository.UserRepository
+      TCPServer
   other-modules:
       Paths_fingerd
   hs-source-dirs:
