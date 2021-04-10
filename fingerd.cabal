@@ -1,10 +1,8 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: 0c64987a853566bdfedc4c9acddb227738ffb45e0561cfabee2eec408b87cad1
 
 name:           fingerd
 version:        0.1.0.0
@@ -33,28 +31,41 @@ library
       Main
       Repository.Database
       Repository.UserRepository
+      Service
       TCPServer
   other-modules:
       Paths_fingerd
   hs-source-dirs:
       src
-  default-extensions: TypeSynonymInstances FlexibleInstances MonadComprehensions FlexibleContexts RankNTypes TypeOperators UndecidableInstances MultiParamTypeClasses FunctionalDependencies OverloadedStrings LambdaCase TupleSections
+  default-extensions:
+      TypeSynonymInstances
+      FlexibleInstances
+      MonadComprehensions
+      FlexibleContexts
+      RankNTypes
+      TypeOperators
+      UndecidableInstances
+      MultiParamTypeClasses
+      FunctionalDependencies
+      OverloadedStrings
+      LambdaCase
+      TupleSections
   build-depends:
-      aeson >=1.4.7.1
+      aeson
     , base >=4.7 && <5
     , bytestring
-    , containers >=0.6.2.1
-    , managed >=1.0.8
-    , monad-loops >=0.4.3
-    , mtl >=2.2.2
+    , containers
+    , managed
+    , monad-loops
+    , mtl
     , network
-    , random >=1.2
+    , random
     , raw-strings-qq
     , resource-pool
     , sqlite-simple
-    , text >=1.2.4.0
+    , text
     , text-format-simple
-    , transformers >=0.5.2.0
+    , transformers
     , unordered-containers
     , vector
   default-language: Haskell2010
@@ -63,25 +74,37 @@ executable fingerd
   main-is: Main.hs
   hs-source-dirs:
       src
-  default-extensions: TypeSynonymInstances FlexibleInstances MonadComprehensions FlexibleContexts RankNTypes TypeOperators UndecidableInstances MultiParamTypeClasses FunctionalDependencies OverloadedStrings LambdaCase TupleSections
+  default-extensions:
+      TypeSynonymInstances
+      FlexibleInstances
+      MonadComprehensions
+      FlexibleContexts
+      RankNTypes
+      TypeOperators
+      UndecidableInstances
+      MultiParamTypeClasses
+      FunctionalDependencies
+      OverloadedStrings
+      LambdaCase
+      TupleSections
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
   build-depends:
-      aeson >=1.4.7.1
+      aeson
     , base >=4.7 && <5
     , bytestring
-    , containers >=0.6.2.1
+    , containers
     , fingerd
-    , managed >=1.0.8
-    , monad-loops >=0.4.3
-    , mtl >=2.2.2
+    , managed
+    , monad-loops
+    , mtl
     , network
-    , random >=1.2
+    , random
     , raw-strings-qq
     , resource-pool
     , sqlite-simple
-    , text >=1.2.4.0
+    , text
     , text-format-simple
-    , transformers >=0.5.2.0
+    , transformers
     , unordered-containers
     , vector
   default-language: Haskell2010
@@ -93,29 +116,41 @@ test-suite integration
       Paths_fingerd
   hs-source-dirs:
       test/integration
-  default-extensions: TypeSynonymInstances FlexibleInstances MonadComprehensions FlexibleContexts RankNTypes TypeOperators UndecidableInstances MultiParamTypeClasses FunctionalDependencies OverloadedStrings LambdaCase TupleSections
+  default-extensions:
+      TypeSynonymInstances
+      FlexibleInstances
+      MonadComprehensions
+      FlexibleContexts
+      RankNTypes
+      TypeOperators
+      UndecidableInstances
+      MultiParamTypeClasses
+      FunctionalDependencies
+      OverloadedStrings
+      LambdaCase
+      TupleSections
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HUnit
-    , aeson >=1.4.7.1
+    , aeson
     , base >=4.7 && <5
     , bytestring
-    , containers >=0.6.2.1
+    , containers
     , fingerd
     , hspec
-    , managed >=1.0.8
-    , monad-loops >=0.4.3
-    , mtl >=2.2.2
+    , managed
+    , monad-loops
+    , mtl
     , network
-    , random >=1.2
+    , random
     , raw-strings-qq
     , resource-pool
     , sqlite-simple
     , test-framework
     , test-framework-hunit
-    , text >=1.2.4.0
+    , text
     , text-format-simple
-    , transformers >=0.5.2.0
+    , transformers
     , unordered-containers
     , vector
   default-language: Haskell2010
@@ -127,29 +162,41 @@ test-suite unit
       Paths_fingerd
   hs-source-dirs:
       test/unit
-  default-extensions: TypeSynonymInstances FlexibleInstances MonadComprehensions FlexibleContexts RankNTypes TypeOperators UndecidableInstances MultiParamTypeClasses FunctionalDependencies OverloadedStrings LambdaCase TupleSections
+  default-extensions:
+      TypeSynonymInstances
+      FlexibleInstances
+      MonadComprehensions
+      FlexibleContexts
+      RankNTypes
+      TypeOperators
+      UndecidableInstances
+      MultiParamTypeClasses
+      FunctionalDependencies
+      OverloadedStrings
+      LambdaCase
+      TupleSections
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HUnit
-    , aeson >=1.4.7.1
+    , aeson
     , base >=4.7 && <5
     , bytestring
-    , containers >=0.6.2.1
+    , containers
     , hspec
-    , managed >=1.0.8
-    , monad-loops >=0.4.3
-    , mtl >=2.2.2
+    , managed
+    , monad-loops
+    , mtl
     , network
     , programminghaskell
-    , random >=1.2
+    , random
     , raw-strings-qq
     , resource-pool
     , sqlite-simple
     , test-framework
     , test-framework-hunit
-    , text >=1.2.4.0
+    , text
     , text-format-simple
-    , transformers >=0.5.2.0
+    , transformers
     , unordered-containers
     , vector
   default-language: Haskell2010
