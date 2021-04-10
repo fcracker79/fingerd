@@ -1,9 +1,12 @@
 module Main where
 
-import qualified Debug as D
 import TCPServer (server)
-import Domain.UserService (responder)
-import Repository.Database (pool)
+import Domain.UserService (responder, ensureDatabase)
+import Repository.Database (newPool)
+import Control.Monad.Managed
 
 main :: IO ()
-main = pool >>= server "7979" . responder 
+main = do 
+  pool <- newPool
+  runManaged $ ensureDatabase pool
+  server "7979" $ responder pool
