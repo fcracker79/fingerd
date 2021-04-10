@@ -20,23 +20,23 @@ extra-source-files:
 description:         Please see the README on GitHub at <https://github.com/fcracker79/fingerd#readme>
 
 dependencies:
+- aeson 
 - base >= 4.7 && < 5
-- monad-loops >= 0.4.3
-- mtl >= 2.2.2
-- managed >= 1.0.8
-- transformers >= 0.5.2.0
-- aeson >= 1.4.7.1
-- text >= 1.2.4.0
-- unordered-containers
 - bytestring
-- containers >= 0.6.2.1
-- random >= 1.2
-- text-format-simple
-- vector
+- containers 
+- managed 
+- monad-loops 
+- mtl 
 - network
-- sqlite-simple
+- random 
 - raw-strings-qq
 - resource-pool
+- sqlite-simple
+- text 
+- text-format-simple
+- transformers 
+- unordered-containers
+- vector
 
 library:
   source-dirs: src
@@ -44,7 +44,6 @@ library:
 executables:
   fingerd:
     main:                Main.hs
-    other-modules:       []
     source-dirs:         src
     ghc-options:
     - -threaded

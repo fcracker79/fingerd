@@ -1,55 +1,64 @@
+{-# LANGUAGE BlockArguments #-}
+
 module TCPServer where
 
-
-import Control.Monad (forever)
+import Control.Monad (forever, void)
+import Data.ByteString (ByteString)
+import Data.Text (Text)
+import Data.Text.Encoding
 import Network.Socket
-    ( bind, close, defaultHints,
-      getAddrInfo,
-      withSocketsDo,
-      accept,
-      listen,
-      socket,
-      defaultProtocol,
-      AddrInfo(addrFlags, addrFamily, addrAddress),
-      AddrInfoFlag(AI_PASSIVE),
-      Socket,
-      SocketType(Stream) )
-import Network.Socket.ByteString (recv, sendAll)
-import Control.Monad ( forever )
+  ( AddrInfo (addrAddress, addrFamily, addrFlags)
+  , AddrInfoFlag (AI_PASSIVE)
+  , Socket
+  , SocketType (Stream)
+  , accept
+  , bind
+  , close
+  , defaultHints
+  , defaultProtocol
+  , getAddrInfo
+  , listen
+  , socket
+  , withSocketsDo, ServiceName
+  )
+import Network.Socket.ByteString (recv, send, sendAll)
+import Repository.UserRepository
+import Service
+import Control.Monad.Managed
 
-logAndEcho :: Socket -> IO ()
-logAndEcho sock = forever $ do 
+{- logAndEcho :: Socket -> IO ()
+logAndEcho sock = forever $ do
   (soc, _) <- accept sock
   printAndKickback soc
   close soc
-  where printAndKickback conn = do
-              msg <- recv conn 1024
-              print msg
-              sendAll conn msg
+  where
+    printAndKickback conn = do
+      msg <- recv conn 1024
+      print msg
+      sendAll conn msg -}
 
-
-execute :: IO ()
-execute = withSocketsDo $ do
-  addrinfos <- getAddrInfo (Just (defaultHints {addrFlags = [AI_PASSIVE]})) Nothing (Just "79")
-  let serveraddr = head addrinfos
+server :: ServiceName -> Respond Managed -> IO ()
+server port respond = withSocketsDo $ do
+  serveraddr : _ <- getAddrInfo
+    do Just $ defaultHints {addrFlags = [AI_PASSIVE]}
+    do Nothing
+    do Just port
   sock <- socket (addrFamily serveraddr) Stream defaultProtocol
   bind sock (addrAddress serveraddr)
   listen sock 1
-  logAndEcho sock
+  runManaged $ handleQueries respond sock
   close sock
 
+handleQuery :: Respond Managed -> Socket -> Managed ()
+handleQuery respond soc = void $ do
+  msg <- liftIO $ recv soc 1024
+  liftIO . send soc =<< case msg of
+    "\r\n" -> respond ReqUsers
+    name -> respond $ ReqUser $ decodeUtf8 name
 
-handleQuery :: Socket -> IO ()
-handleQuery soc = do
-    msg <- recv soc 1024
-    case msg of 
-        "\r\n" -> returnUsers soc
-        name -> returnUser soc (decodeUtf8 name)
-
-
-handleQueries :: Socket -> IO ()
-handleQueries sock = forever $ do
-    (soc, _) <- accept sock
-    putStrLn "Got connection, handling query"
-    handleQuery soc
-    close soc
+handleQueries :: Respond Managed -> Socket -> Managed ()
+handleQueries respond sock = forever $ do
+  (soc, _) <- liftIO $ accept sock  
+  liftIO $ putStrLn "got connection, handling query"
+  handleQuery respond soc
+  liftIO $ close soc
