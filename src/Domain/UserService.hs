@@ -12,7 +12,7 @@ import Data.ByteString (ByteString)
 import Data.Pool (Pool, withResource)
 import qualified Data.Text as T
 import Database.SQLite.Simple (Connection (Connection))
-import Domain.User (User (username), UserName)
+import Domain.User (UserData (username), UserName)
 import Repository.Database (executeM)
 import qualified Repository.UserRepository as R
 

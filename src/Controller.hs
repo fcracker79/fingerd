@@ -1,20 +1,24 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Controller where
 
 import Control.Applicative ((<|>))
 import Data.Attoparsec.ByteString.Char8
+import qualified Data.Attoparsec.ByteString.Char8 as A
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Data.List (intersperse)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf16BE, encodeUtf8)
-import Domain.User (User (..), UserName, renderUser, renderUsers)
+import Domain.User (User (..), UserData (..), UserName, renderUser, renderUsers)
+import Repository.UserRepository
 
 -- | index the API in types
 data APIPoints = GetUserAPI | GetUsersAPI | SaveUserAPI | DeleteUserAPI | UpdateUserAPI
@@ -26,7 +30,7 @@ data ServiceKind = ServiceQueryType | ServiceEditType
 data RequestG v a where
   GetUsersReq :: RequestG ServiceQueryType GetUsersAPI
   GetUserReq :: Text -> RequestG ServiceQueryType GetUserAPI
-  SaveUserReq :: User -> RequestG ServiceEditType SaveUserAPI
+  SaveUserReq :: UserData -> RequestG ServiceEditType SaveUserAPI
   DeleteUserReq :: UserName -> RequestG ServiceEditType DeleteUserAPI
   UpdateUserReq :: User -> RequestG ServiceEditType UpdateUserAPI
 
@@ -71,6 +75,24 @@ parseQuery =
 -- | parser for the ServiceEditType
 parseEdit :: Parser (Request ServiceEditType)
 parseEdit =
-  Request . SaveUserReq <$> error "notImplemented"
-    <|> Request . DeleteUserReq <$> error "notImplemented"
-    <|> Request . UpdateUserReq <$> error "notImplemented"
+  Request . SaveUserReq <$> do string "+" >> space >> parseUserData
+    <|> Request . DeleteUserReq <$> do string "-" >> space >> parseUserName
+    <|> Request . UpdateUserReq <$> do string "~" >> space >> parseUser
+
+parseUser :: Parser User
+parseUser = do 
+  id <- decimal 
+  space
+  char ','
+  User id <$> parseUserData
+
+parseUserName :: Parser UserName
+parseUserName = decodeUtf8 <$> takeByteString
+
+-- TODO: validate
+parseUserData :: Parser UserData
+parseUserData = do
+  [username, shell, homeDirectory, realName, phone] <-
+    fmap (T.strip . decodeUtf8)
+      <$> A.takeWhile (/= ',') `sepBy` char ','
+  pure $ UserData {..}

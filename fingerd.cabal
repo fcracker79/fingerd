@@ -55,6 +55,7 @@ library
     , base >=4.7 && <5
     , bytestring
     , containers
+    , exceptions
     , managed
     , monad-loops
     , mtl
@@ -103,6 +104,7 @@ executable fingerd
     , base >=4.7 && <5
     , bytestring
     , containers
+    , exceptions
     , fingerd
     , managed
     , monad-loops
@@ -148,6 +150,7 @@ test-suite integration
     , base >=4.7 && <5
     , bytestring
     , containers
+    , exceptions
     , fingerd
     , hspec
     , managed
@@ -196,6 +199,7 @@ test-suite unit
     , base >=4.7 && <5
     , bytestring
     , containers
+    , exceptions
     , hspec
     , managed
     , monad-loops

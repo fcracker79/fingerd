@@ -13,7 +13,12 @@ type UserName = Text
 
 data User = User
   { userId :: Integer
-  , username :: UserName
+  , userData :: UserData
+  }
+  deriving (Eq, Show)
+data UserData = UserData 
+
+  { username :: UserName
   , shell :: Text
   , homeDirectory :: Text
   , realName :: Text
@@ -23,9 +28,9 @@ data User = User
 
 renderUser :: Maybe User -> ByteString
 renderUser Nothing = "No such user"
-renderUser (Just (User _ username shell homeDir realName _)) =
+renderUser (Just (User _ (UserData username shell homeDir realName _))) =
   BS.concat
-    [ "Login: "
+    [  "Login: "
     , e username
     , "\t\t\t\t"
     , "Name: "

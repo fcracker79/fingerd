@@ -13,20 +13,21 @@ import Control.Monad.Trans.Maybe (MaybeT (MaybeT), runMaybeT)
 import qualified Data.Text as T
 import Database.SQLite.Simple (Connection, FromRow (..), Only (..), Query, ToRow (..), close, execute, execute_, field, query, query_)
 import Database.SQLite.Simple.Types (Null (..), Query)
-import Domain.User (User (..), UserName)
+import Domain.User (User (..), UserData (..), UserName)
 import Text.RawString.QQ (r)
 
 instance FromRow User where
   fromRow =
     User <$> field
-      <*> field
-      <*> field
-      <*> field
-      <*> field
-      <*> field
+      <*> do
+        UserData <$> field
+          <*> field
+          <*> field
+          <*> field
+          <*> field
 
 instance ToRow User where
-  toRow (User id_ username shell homeDir realName phone) =
+  toRow (User id_ (UserData username shell homeDir realName phone)) =
     toRow
       ( id_
       , username
@@ -85,14 +86,14 @@ getUser conn username = do
     _ -> throw DuplicateData
 
 getUsers :: Connection -> IO [UserName]
-getUsers dbConn = fmap username <$> query_ dbConn allUsers
+getUsers dbConn = fmap (username . userData) <$> query_ dbConn allUsers
 
-saveUser :: Connection -> User -> IO UserName
-saveUser dbConn user = do
-  existingUser <- runMaybeT $ getUser dbConn $ username user
+saveUser :: Connection -> UserData -> IO UserName
+saveUser dbConn user@UserData {..} = do
+  existingUser <- runMaybeT $ getUser dbConn username
   -- TODO there must be a better way to do thid
   case existingUser of
     Nothing -> do
-      execute dbConn insertUser $ toRow user
-      return $ username user
-    _ -> return $ username user
+      execute dbConn insertUser (Null, username, shell, homeDirectory, realName, phone)
+      return username
+    _ -> return username
