@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 
-{-# LANGUAGE DataKinds #-}
 module Domain.UserService where
 
 import Control.Monad.IO.Class (liftIO)
@@ -30,10 +30,10 @@ responderUser pool = RespondG \case
   GetUsersReq -> GetUsersResp <$> getAllUserNames pool
   GetUserReq user -> GetUserResp <$> getUser pool user
 
-responderManagement :: MonadManaged m => Pool Connection -> RespondG ViaManagementK m
-responderManagement pool = RespondG \case
+responderEdit :: MonadManaged m => Pool Connection -> RespondG ViaEditK m
+responderEdit pool = RespondG \case
   SaveUserReq user -> executeM pool $ \conn -> do
     R.saveUser conn user
-    pure SaveUserResp 
-  UpdateUserReq user  -> pure DeleteUserResp 
-  DeleteUserReq userName ->  pure UpdateUserResp
+    pure SaveUserResp
+  UpdateUserReq user -> pure DeleteUserResp
+  DeleteUserReq userName -> pure UpdateUserResp

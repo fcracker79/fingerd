@@ -43,8 +43,8 @@ handleUser (RespondG respond) soc = void $ do
     "\r\n" -> serialize <$> respond GetUsersReq
     name -> serialize <$> respond (GetUserReq $ decodeUtf8 name)
 
-handleManagement :: HandleReq ViaManagementK
-handleManagement (RespondG respond) soc = void $ do
+handleEdit :: HandleReq ViaEditK
+handleEdit (RespondG respond) soc = void $ do
   msg <- liftIO $ recv soc 1024
   let cmd = BS.head msg
   liftIO . send soc =<< case w2c cmd of
@@ -68,7 +68,7 @@ server port handler = withSocketsDo $ do
   runManaged $ handleQueries handler sock
   close sock
 
-handleQueries :: (Socket -> Managed ()) -> Socket-> Managed ()
+handleQueries :: (Socket -> Managed ()) -> Socket -> Managed ()
 handleQueries handler sock = forever $ do
   (soc, _) <- liftIO $ accept sock
   liftIO $ putStrLn "got connection, handling query"

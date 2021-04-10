@@ -14,25 +14,25 @@ import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import Domain.User (User (..), UserName, renderUser, renderUsers)
 
-data RequestK = GetUserK | GetUsersK | SaveUserK | DeleteUserK | UpdateUserK 
+data RequestK = GetUserK | GetUsersK | SaveUserK | DeleteUserK | UpdateUserK
 
-data Via = ViaUserK | ViaManagementK 
+data Via = ViaUserK | ViaEditK
+
 data RequestG v a where
   GetUsersReq :: RequestG ViaUserK GetUsersK
   GetUserReq :: Text -> RequestG ViaUserK GetUserK
-  SaveUserReq :: User -> RequestG ViaManagementK GetUserK
-  DeleteUserReq :: UserName -> RequestG ViaManagementK GetUserK
-  UpdateUserReq :: User -> RequestG ViaManagementK GetUserK
-
+  SaveUserReq :: User -> RequestG ViaEditK GetUserK
+  DeleteUserReq :: UserName -> RequestG ViaEditK GetUserK
+  UpdateUserReq :: User -> RequestG ViaEditK GetUserK
 
 data ResponseG v a where
   GetUsersResp :: [UserName] -> ResponseG ViaUserK GetUsersK
   GetUserResp :: Maybe User -> ResponseG ViaUserK GetUserK
-  SaveUserResp :: ResponseG ViaManagementK GetUserK
-  DeleteUserResp :: ResponseG ViaManagementK GetUserK
-  UpdateUserResp :: ResponseG ViaManagementK GetUserK
+  SaveUserResp :: ResponseG ViaEditK GetUserK
+  DeleteUserResp :: ResponseG ViaEditK GetUserK
+  UpdateUserResp :: ResponseG ViaEditK GetUserK
 
-newtype RespondG v m = RespondG (forall a . RequestG v a -> m (ResponseG v a))
+newtype RespondG v m = RespondG (forall a. RequestG v a -> m (ResponseG v a))
 
 serialize :: ResponseG v a -> ByteString
 serialize (GetUserResp n) = renderUser n
