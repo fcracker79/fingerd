@@ -5,7 +5,7 @@ import qualified Data.ByteString as BS
 import Data.List (intersperse)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Encoding
+import Data.Text.Encoding ( encodeUtf8 )
 import Database.SQLite.Simple (FromRow, field, fromRow)
 import Database.SQLite.Simple.ToRow (ToRow, toRow)
 

@@ -21,7 +21,7 @@ ensureDatabase pool = executeM pool R.createDatabase
 
 responderQuery :: MonadManaged m => Pool Connection -> Respond ServiceQueryType m
 responderQuery pool = Respond \case
-  GetUsersReq -> GetUsersResp <$> executeM pool R.returnUsers
+  GetUsersReq -> GetUsersResp <$> executeM pool R.getUsers
   GetUserReq user ->
     GetUserResp <$> executeM
       pool

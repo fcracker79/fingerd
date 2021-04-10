@@ -5,7 +5,7 @@ import Control.Monad.Managed (runManaged)
 import Controller
 import Domain.UserService (ensureDatabase, responderEdit, responderQuery)
 import Repository.Database (newPool)
-import TCPServer
+import Server
 
 main :: IO ()
 main = do
