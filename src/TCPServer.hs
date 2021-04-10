@@ -9,6 +9,7 @@ import Control.Monad.Managed
   , MonadIO (liftIO)
   , runManaged
   )
+import Controller
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Data.ByteString.Internal (w2c)
@@ -32,29 +33,15 @@ import Network.Socket
   , withSocketsDo
   )
 import Network.Socket.ByteString (recv, send, sendAll)
-import Controller
 
-type HandleReq v = RespondG v Managed -> Socket -> Managed ()
-
-handleQuery :: HandleReq ServiceQueryK
-handleQuery (RespondG respond) soc = void $ do
+handleQuery :: Parser v -> RespondG v Managed -> Socket -> Managed ()
+handleQuery parse respond soc = void $ do
   msg <- liftIO $ recv soc 1024
-  liftIO . send soc =<< case msg of
-    "\r\n" -> serialize <$> respond GetUsersReq
-    name -> serialize <$> respond (GetUserReq $ decodeUtf8 name)
-
-handleEdit :: HandleReq ServiceEditK
-handleEdit (RespondG respond) soc = void $ do
-  msg <- liftIO $ recv soc 1024
-  let cmd = BS.head msg
-  liftIO . send soc =<< case w2c cmd of
-    '+' -> serialize <$> respond (SaveUserReq user)
-    '-' -> serialize <$> respond (DeleteUserReq $ decodeUtf8 $ BS.tail msg)
-    '~' -> serialize <$> respond (UpdateUserReq user)
-  where
-    user :: User
-    -- TODO user from string
-    user = undefined
+  case parse msg of
+    Nothing -> liftIO . send soc $ "not parse"
+    Just input -> do
+      Response output <- applyRespond respond input
+      liftIO . send soc . serialize $ output
 
 server :: ServiceName -> (Socket -> Managed ()) -> IO ()
 server port handler = withSocketsDo $ do

@@ -11,7 +11,7 @@ import qualified Data.ByteString as BS
 import Data.List (intersperse)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Encoding (encodeUtf8)
+import Data.Text.Encoding (decodeUtf8, encodeUtf16BE, encodeUtf8)
 import Domain.User (User (..), UserName, renderUser, renderUsers)
 
 data RequestK = GetUserK | GetUsersK | SaveUserK | DeleteUserK | UpdateUserK
@@ -40,3 +40,23 @@ serialize (GetUsersResp n) = renderUsers n
 serialize SaveUserResp = "OK"
 serialize DeleteUserResp = "not implemented"
 serialize UpdateUserResp = "not implemented"
+
+data Request v = forall a. Request (RequestG v a)
+
+data Response v = forall a. Response (ResponseG v a)
+
+applyRespond :: Functor m => RespondG v m -> Request v -> m (Response v)
+applyRespond (RespondG f) (Request x) = Response <$> f x
+
+type Parser v = ByteString -> Maybe (Request v)
+
+parseQuery :: Parser ServiceQueryK
+parseQuery = \case
+  "\r\n" -> Just $ Request GetUsersReq
+  name -> Just $ Request $ GetUserReq (T.strip $ decodeUtf8 name) 
+ 
+parseEdit :: Parser ServiceEditK 
+parseEdit = \case 
+  "+\r\n" -> Just $ Request $ SaveUserReq $ error "notImplemented"
+  "-\r\n" -> Just $ Request $ DeleteUserReq $ error "notImplemented"
+  "~\r\n" -> Just $ Request $ UpdateUserReq $ error "notImplemented"
