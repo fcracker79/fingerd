@@ -7,6 +7,6 @@ import Control.Monad.Managed
 
 main :: IO ()
 main = do 
-  pool <- newPool
+  pool <- newPool "finger.db"
   runManaged $ ensureDatabase pool
   server "7979" $ responder pool
