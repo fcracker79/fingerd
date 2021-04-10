@@ -16,21 +16,21 @@ import Domain.User (User (..), UserName, renderUser, renderUsers)
 
 data RequestK = GetUserK | GetUsersK | SaveUserK | DeleteUserK | UpdateUserK
 
-data Via = ViaUserK | ViaEditK
+data Service = ServiceQueryK | ServiceEditK
 
 data RequestG v a where
-  GetUsersReq :: RequestG ViaUserK GetUsersK
-  GetUserReq :: Text -> RequestG ViaUserK GetUserK
-  SaveUserReq :: User -> RequestG ViaEditK GetUserK
-  DeleteUserReq :: UserName -> RequestG ViaEditK GetUserK
-  UpdateUserReq :: User -> RequestG ViaEditK GetUserK
+  GetUsersReq :: RequestG ServiceQueryK GetUsersK
+  GetUserReq :: Text -> RequestG ServiceQueryK GetUserK
+  SaveUserReq :: User -> RequestG ServiceEditK GetUserK
+  DeleteUserReq :: UserName -> RequestG ServiceEditK GetUserK
+  UpdateUserReq :: User -> RequestG ServiceEditK GetUserK
 
 data ResponseG v a where
-  GetUsersResp :: [UserName] -> ResponseG ViaUserK GetUsersK
-  GetUserResp :: Maybe User -> ResponseG ViaUserK GetUserK
-  SaveUserResp :: ResponseG ViaEditK GetUserK
-  DeleteUserResp :: ResponseG ViaEditK GetUserK
-  UpdateUserResp :: ResponseG ViaEditK GetUserK
+  GetUsersResp :: [UserName] -> ResponseG ServiceQueryK GetUsersK
+  GetUserResp :: Maybe User -> ResponseG ServiceQueryK GetUserK
+  SaveUserResp :: ResponseG ServiceEditK GetUserK
+  DeleteUserResp :: ResponseG ServiceEditK GetUserK
+  UpdateUserResp :: ResponseG ServiceEditK GetUserK
 
 newtype RespondG v m = RespondG (forall a. RequestG v a -> m (ResponseG v a))
 

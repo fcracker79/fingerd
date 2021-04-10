@@ -25,12 +25,12 @@ getAllUserNames pool = executeM pool R.returnUsers
 getUser :: MonadManaged m => Pool Connection -> UserName -> m (Maybe User)
 getUser pool u = executeM pool $ \conn -> runMaybeT $ R.getUser conn u
 
-responderUser :: MonadManaged m => Pool Connection -> RespondG ViaUserK m
-responderUser pool = RespondG \case
+responderQuery :: MonadManaged m => Pool Connection -> RespondG ServiceQueryK m
+responderQuery pool = RespondG \case
   GetUsersReq -> GetUsersResp <$> getAllUserNames pool
   GetUserReq user -> GetUserResp <$> getUser pool user
 
-responderEdit :: MonadManaged m => Pool Connection -> RespondG ViaEditK m
+responderEdit :: MonadManaged m => Pool Connection -> RespondG ServiceEditK m
 responderEdit pool = RespondG \case
   SaveUserReq user -> executeM pool $ \conn -> do
     R.saveUser conn user

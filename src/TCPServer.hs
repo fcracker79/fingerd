@@ -36,14 +36,14 @@ import Service
 
 type HandleReq v = RespondG v Managed -> Socket -> Managed ()
 
-handleUser :: HandleReq ViaUserK
-handleUser (RespondG respond) soc = void $ do
+handleQuery :: HandleReq ServiceQueryK
+handleQuery (RespondG respond) soc = void $ do
   msg <- liftIO $ recv soc 1024
   liftIO . send soc =<< case msg of
     "\r\n" -> serialize <$> respond GetUsersReq
     name -> serialize <$> respond (GetUserReq $ decodeUtf8 name)
 
-handleEdit :: HandleReq ViaEditK
+handleEdit :: HandleReq ServiceEditK
 handleEdit (RespondG respond) soc = void $ do
   msg <- liftIO $ recv soc 1024
   let cmd = BS.head msg
