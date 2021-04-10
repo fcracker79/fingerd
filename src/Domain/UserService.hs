@@ -31,6 +31,6 @@ responderEdit :: MonadManaged m => Pool Connection -> Respond ServiceEditType m
 responderEdit pool = Respond \case
   SaveUserReq user -> executeM pool $ \conn -> do
     R.saveUser conn user
-    pure SaveUserResp
-  UpdateUserReq user -> pure UpdateUserResp
-  DeleteUserReq userName -> pure DeleteUserResp
+    pure $ SaveUserResp True 
+  UpdateUserReq user -> pure $ UpdateUserResp False
+  DeleteUserReq userName -> pure $ DeleteUserResp False 

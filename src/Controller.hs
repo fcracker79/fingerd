@@ -32,9 +32,9 @@ data RequestG v a where
 data ResponseG v a where
   GetUsersResp :: [UserName] -> ResponseG ServiceQueryType GetUsersAPI
   GetUserResp :: Maybe User -> ResponseG ServiceQueryType GetUserAPI
-  SaveUserResp :: ResponseG ServiceEditType SaveUserAPI
-  DeleteUserResp :: ResponseG ServiceEditType DeleteUserAPI
-  UpdateUserResp :: ResponseG ServiceEditType UpdateUserAPI
+  SaveUserResp :: Bool -> ResponseG ServiceEditType SaveUserAPI
+  DeleteUserResp :: Bool -> ResponseG ServiceEditType DeleteUserAPI
+  UpdateUserResp :: Bool -> ResponseG ServiceEditType UpdateUserAPI
 
 -- | a generic handler for any request that has to produce the right type of response
 newtype Respond v m = Respond (forall a. RequestG v a -> m (ResponseG v a))
@@ -43,9 +43,9 @@ newtype Respond v m = Respond (forall a. RequestG v a -> m (ResponseG v a))
 render :: ResponseG v a -> ByteString
 render (GetUserResp n) = renderUser n
 render (GetUsersResp n) = renderUsers n
-render SaveUserResp = "OK"
-render DeleteUserResp = "not implemented"
-render UpdateUserResp = "not implemented"
+render (SaveUserResp b) = if b then "Ok" else "User already present"
+render (DeleteUserResp b) = "not implemented"
+render (UpdateUserResp b) = "not implemented"
 
 -- | any request for a 'v' service
 data Request v = forall a. Request (RequestG v a)

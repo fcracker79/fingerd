@@ -2,10 +2,10 @@ module Main where
 
 import qualified Control.Concurrent.Thread.Group as TG
 import Control.Monad.Managed (runManaged)
-import Controller
+import Controller ( parseQuery, parseEdit )
 import Domain.UserService (ensureDatabase, responderEdit, responderQuery)
 import Repository.Database (newPool)
-import Server
+import Server ( serverHandler, server )
 
 main :: IO ()
 main = do
