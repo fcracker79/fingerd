@@ -1,5 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 
+{-# LANGUAGE DataKinds #-}
 module TCPServer where
 
 import Control.Monad (forever, void)
@@ -40,7 +41,7 @@ logAndEcho sock = forever $ do
       print msg
       sendAll conn msg -}
 
-server :: ServiceName -> RespondG Managed -> IO ()
+server :: ServiceName -> RespondG ViaUserK Managed -> IO ()
 server port respond = withSocketsDo $ do
   serveraddr : _ <- getAddrInfo
     do Just $ defaultHints {addrFlags = [AI_PASSIVE]}
@@ -52,14 +53,14 @@ server port respond = withSocketsDo $ do
   runManaged $ handleQueries respond sock
   close sock
 
-handleQuery :: RespondG Managed -> Socket -> Managed ()
+handleQuery :: RespondG ViaUserK Managed -> Socket -> Managed ()
 handleQuery (RespondG respond) soc = void $ do
   msg <- liftIO $ recv soc 1024
   liftIO . send soc =<< case msg of
-    "\r\n" -> serialize <$> respond UsersReq
-    name -> serialize <$> respond (UserReq $ decodeUtf8 name)
+    "\r\n" -> serialize <$> respond GetUsersReq
+    name -> serialize <$> respond (GetUserReq $ decodeUtf8 name)
 
-handleQueries :: RespondG Managed -> Socket -> Managed ()
+handleQueries :: RespondG ViaUserK Managed -> Socket -> Managed ()
 handleQueries respond sock = forever $ do
   (soc, _) <- liftIO $ accept sock  
   liftIO $ putStrLn "got connection, handling query"
@@ -67,26 +68,26 @@ handleQueries respond sock = forever $ do
   liftIO $ close soc
 
 
-handleEdits :: EditRespond Managed -> Socket -> Managed ()
+handleEdits :: RespondG ViaManagementK Managed -> Socket -> Managed ()
 handleEdits respond sock = forever $ do
   (soc, _) <- liftIO $ accept sock  
   liftIO $ putStrLn "got connection, handling query"
   handleEdit respond soc
   liftIO $ close soc
 
-handleEdit :: EditRespond Managed -> Socket -> Managed ()
-handleEdit respond soc = void $ do
+handleEdit :: RespondG ViaManagementK Managed -> Socket -> Managed ()
+handleEdit (RespondG respond) soc = void $ do
   msg <- liftIO $ recv soc 1024
   let cmd = BS.head msg
   liftIO . send soc =<< case w2c cmd of
-    '+' -> respond $ SaveUser user
-    '-' -> respond $ DeleteUser $ decodeUtf8 $ BS.tail msg
-    '~' -> respond $ UpdateUser user
+    '+' -> "OK" <$ respond (SaveUserReq user)
+    '-' -> "NI" <$ respond (DeleteUserReq $ decodeUtf8 $ BS.tail msg)
+    '~' -> "NI" <$ respond (UpdateUserReq user)
     where user :: User
           -- TODO user from string
           user = undefined
 
-serverForEdit :: ServiceName -> EditRespond Managed -> IO ()
+serverForEdit :: ServiceName -> RespondG ViaManagementK Managed -> IO ()
 serverForEdit port respond = withSocketsDo $ do
   serveraddr : _ <- getAddrInfo
     do Just $ defaultHints {addrFlags = [AI_PASSIVE]}

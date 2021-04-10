@@ -1,7 +1,7 @@
 module Main where
 
 import TCPServer (server, serverForEdit)
-import Domain.UserService (responder, ensureDatabase, responderForEdit)
+import Domain.UserService (responderUser, ensureDatabase, responderManagement)
 import Repository.Database (newPool)
 import Control.Monad.Managed ( runManaged )
 import GHC.Conc (forkIO,)
@@ -11,6 +11,6 @@ main = do
   pool <- newPool "finger.db"
   runManaged $ ensureDatabase pool
   group <- TG.new
-  TG.forkIO group $ server "79" $ responder pool
-  TG.forkIO group $ serverForEdit "7979" $ responderForEdit pool
+  TG.forkIO group $ server "79" $ responderUser pool
+  TG.forkIO group $ serverForEdit "7979" $ responderManagement pool
   TG.wait group

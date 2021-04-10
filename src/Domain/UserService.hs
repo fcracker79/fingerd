@@ -1,6 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE GADTs #-}
 
+{-# LANGUAGE DataKinds #-}
 module Domain.UserService where
 
 import Control.Monad.IO.Class (liftIO)
@@ -14,31 +15,25 @@ import Domain.User (User (username), UserName)
 import Repository.Database (executeM)
 import qualified Repository.UserRepository as R
 import Service
-  ( EditRequest (DeleteUser, SaveUser, UpdateUser)
-  , EditRespond
-  , RequestG (UserReq, UsersReq)
-  , RespondG (..)
-  , ResponseG (UserResp, UsersResp)
-  )
 
 ensureDatabase :: MonadManaged m => Pool Connection -> m ()
-ensureDatabase p = executeM p R.createDatabase
+ensureDatabase pool = executeM pool R.createDatabase
 
 getAllUserNames :: MonadManaged m => Pool Connection -> m [UserName]
-getAllUserNames p = executeM p R.returnUsers
+getAllUserNames pool = executeM pool R.returnUsers
 
 getUser :: MonadManaged m => Pool Connection -> UserName -> m (Maybe User)
-getUser p u = executeM p $ \conn -> runMaybeT $ R.getUser conn u
+getUser pool u = executeM pool $ \conn -> runMaybeT $ R.getUser conn u
 
-responder :: MonadManaged m => Pool Connection -> RespondG m
-responder pool = RespondG \case
-  UsersReq -> UsersResp <$> getAllUserNames pool
-  UserReq user -> UserResp <$> getUser pool user
+responderUser :: MonadManaged m => Pool Connection -> RespondG ViaUserK m
+responderUser pool = RespondG \case
+  GetUsersReq -> GetUsersResp <$> getAllUserNames pool
+  GetUserReq user -> GetUserResp <$> getUser pool user
 
-
-responderForEdit :: MonadManaged m => Pool Connection -> EditRespond m
-responderForEdit pool (SaveUser user) = executeM pool $ \conn -> do
-  R.saveUser conn user
-  return "OK"
-responderForEdit pool (UpdateUser user) = return "TODO UPDATE"
-responderForEdit pool (DeleteUser userName) = return "TODO DELETE"
+responderManagement :: MonadManaged m => Pool Connection -> RespondG ViaManagementK m
+responderManagement pool = RespondG \case
+  SaveUserReq user -> executeM pool $ \conn -> do
+    R.saveUser conn user
+    pure SaveUserResp 
+  UpdateUserReq user  -> pure DeleteUserResp 
+  DeleteUserReq userName ->  pure UpdateUserResp
