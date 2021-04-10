@@ -19,16 +19,13 @@ import qualified Repository.UserRepository as R
 ensureDatabase :: MonadManaged m => Pool Connection -> m ()
 ensureDatabase pool = executeM pool R.createDatabase
 
-getAllUserNames :: MonadManaged m => Pool Connection -> m [UserName]
-getAllUserNames pool = executeM pool R.returnUsers
-
-getUser :: MonadManaged m => Pool Connection -> UserName -> m (Maybe User)
-getUser pool u = executeM pool $ \conn -> runMaybeT $ R.getUser conn u
-
 responderQuery :: MonadManaged m => Pool Connection -> Respond ServiceQueryType m
 responderQuery pool = Respond \case
-  GetUsersReq -> GetUsersResp <$> getAllUserNames pool
-  GetUserReq user -> GetUserResp <$> getUser pool user
+  GetUsersReq -> GetUsersResp <$> executeM pool R.returnUsers
+  GetUserReq user ->
+    GetUserResp <$> executeM
+      pool
+      do \conn -> runMaybeT $ R.getUser conn user
 
 responderEdit :: MonadManaged m => Pool Connection -> Respond ServiceEditType m
 responderEdit pool = Respond \case

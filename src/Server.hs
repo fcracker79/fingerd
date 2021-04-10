@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
 
-module TCPServer where
+module Server where
 
 import Control.Monad (forever, void)
 import Control.Monad.Managed

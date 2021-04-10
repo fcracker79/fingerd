@@ -31,7 +31,7 @@ library
       Main
       Repository.Database
       Repository.UserRepository
-      TCPServer
+      Server
   other-modules:
       Paths_fingerd
   hs-source-dirs:
@@ -79,7 +79,7 @@ executable fingerd
       Domain.UserService
       Repository.Database
       Repository.UserRepository
-      TCPServer
+      Server
       Paths_fingerd
   hs-source-dirs:
       src
