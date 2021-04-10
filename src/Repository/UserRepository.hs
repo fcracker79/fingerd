@@ -2,6 +2,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
+{-# LANGUAGE ViewPatterns #-}
 module Repository.UserRepository where
 
 import Control.Applicative (empty)
@@ -67,7 +68,7 @@ createDatabase conn = do
     userName = "callen"
 
 getUser :: Connection -> UserName -> MaybeT IO User
-getUser conn username = do
+getUser conn (T.strip -> username) = do
   results <- liftIO (query conn getUserQuery (Only username))
   case results of
     [] -> empty
