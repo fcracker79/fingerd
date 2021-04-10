@@ -9,4 +9,4 @@ main :: IO ()
 main = do 
   pool <- newPool "finger.db"
   runManaged $ ensureDatabase pool
-  server "79" $ responder pool
+  server "7979" $ responder pool

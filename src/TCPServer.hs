@@ -22,7 +22,7 @@ import Network.Socket
   , withSocketsDo, ServiceName
   )
 import Network.Socket.ByteString (recv, send, sendAll)
-import Service ( Respond, Request(ReqUser, ReqUsers) )
+import Service 
 import Control.Monad.Managed
     ( runManaged, MonadIO(liftIO), Managed )
 
@@ -37,7 +37,7 @@ logAndEcho sock = forever $ do
       print msg
       sendAll conn msg -}
 
-server :: ServiceName -> Respond Managed -> IO ()
+server :: ServiceName -> RespondG Managed -> IO ()
 server port respond = withSocketsDo $ do
   serveraddr : _ <- getAddrInfo
     do Just $ defaultHints {addrFlags = [AI_PASSIVE]}
@@ -49,14 +49,14 @@ server port respond = withSocketsDo $ do
   runManaged $ handleQueries respond sock
   close sock
 
-handleQuery :: Respond Managed -> Socket -> Managed ()
-handleQuery respond soc = void $ do
+handleQuery :: RespondG Managed -> Socket -> Managed ()
+handleQuery (RespondG respond) soc = void $ do
   msg <- liftIO $ recv soc 1024
   liftIO . send soc =<< case msg of
-    "\r\n" -> respond ReqUsers
-    name -> respond $ ReqUser $ decodeUtf8 name
+    "\r\n" -> serialize <$> respond UsersReq
+    name -> serialize <$> respond (UserReq $ decodeUtf8 name)
 
-handleQueries :: Respond Managed -> Socket -> Managed ()
+handleQueries :: RespondG Managed -> Socket -> Managed ()
 handleQueries respond sock = forever $ do
   (soc, _) <- liftIO $ accept sock  
   liftIO $ putStrLn "got connection, handling query"

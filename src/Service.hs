@@ -1,30 +1,31 @@
-module Service where 
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 
+module Service where
 
 import Data.ByteString (ByteString)
-import Data.Text (Text)
-import Domain.User ( User(..), UserName )
-import qualified Data.Text as T
-import Data.Text.Encoding (encodeUtf8)
 import qualified Data.ByteString as BS
 import Data.List (intersperse)
+import Data.Text (Text)
+import qualified Data.Text as T
+import Data.Text.Encoding (encodeUtf8)
+import Domain.User (User (..), UserName, renderUser, renderUsers)
 
+data GetK = GetUserK | GetUsersK
 
-data Request = ReqUser Text | ReqUsers
+data RequestG a where
+  UsersReq :: RequestG GetUsersK
+  UserReq :: Text -> RequestG GetUserK
 
-type Respond m = Request -> m ByteString
+data ResponseG a where
+  UsersResp :: [UserName] -> ResponseG GetUsersK
+  UserResp :: Maybe User -> ResponseG GetUserK
 
-renderUser :: Maybe User -> ByteString
-renderUser Nothing = "No such user"
-renderUser (Just (User _ username shell homeDir realName _)) = BS.concat
-    [
-        "Login: ", e username, "\t\t\t\t",
-        "Name: ", e realName, "\n",
-        "Directory: ", e homeDir, "\t\t\t",
-        "Shell: ", e shell, "\n"
-        ]
-    where e = encodeUtf8
+newtype RespondG m = RespondG (forall a. RequestG a -> m (ResponseG a))
 
-
-renderUsers :: [UserName] -> ByteString
-renderUsers userNames = encodeUtf8 $ T.concat $ intersperse "\n" userNames
+serialize :: ResponseG a -> ByteString
+serialize (UserResp n) = renderUser n
+serialize (UsersResp n) = renderUsers n
