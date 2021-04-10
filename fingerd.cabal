@@ -25,12 +25,12 @@ source-repository head
 
 library
   exposed-modules:
+      Controller
       Domain.User
       Domain.UserService
       Main
       Repository.Database
       Repository.UserRepository
-      Service
       TCPServer
   other-modules:
       Paths_fingerd
@@ -73,11 +73,11 @@ library
 executable fingerd
   main-is: Main.hs
   other-modules:
+      Controller
       Domain.User
       Domain.UserService
       Repository.Database
       Repository.UserRepository
-      Service
       TCPServer
       Paths_fingerd
   hs-source-dirs:

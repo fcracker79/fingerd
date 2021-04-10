@@ -14,7 +14,7 @@ import Database.SQLite.Simple (Connection (Connection))
 import Domain.User (User (username), UserName)
 import Repository.Database (executeM)
 import qualified Repository.UserRepository as R
-import Service
+import Controller
 
 ensureDatabase :: MonadManaged m => Pool Connection -> m ()
 ensureDatabase pool = executeM pool R.createDatabase

@@ -4,7 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Service where
+module Controller where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
@@ -37,4 +37,6 @@ newtype RespondG v m = RespondG (forall a. RequestG v a -> m (ResponseG v a))
 serialize :: ResponseG v a -> ByteString
 serialize (GetUserResp n) = renderUser n
 serialize (GetUsersResp n) = renderUsers n
-serialize _ = "OK"
+serialize SaveUserResp = "OK"
+serialize DeleteUserResp = "not implemented"
+serialize UpdateUserResp = "not implemented"

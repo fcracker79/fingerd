@@ -32,7 +32,7 @@ import Network.Socket
   , withSocketsDo
   )
 import Network.Socket.ByteString (recv, send, sendAll)
-import Service
+import Controller
 
 type HandleReq v = RespondG v Managed -> Socket -> Managed ()
 
@@ -48,9 +48,9 @@ handleEdit (RespondG respond) soc = void $ do
   msg <- liftIO $ recv soc 1024
   let cmd = BS.head msg
   liftIO . send soc =<< case w2c cmd of
-    '+' -> "OK" <$ respond (SaveUserReq user)
-    '-' -> "NI" <$ respond (DeleteUserReq $ decodeUtf8 $ BS.tail msg)
-    '~' -> "NI" <$ respond (UpdateUserReq user)
+    '+' -> serialize <$> respond (SaveUserReq user)
+    '-' -> serialize <$> respond (DeleteUserReq $ decodeUtf8 $ BS.tail msg)
+    '~' -> serialize <$> respond (UpdateUserReq user)
   where
     user :: User
     -- TODO user from string
