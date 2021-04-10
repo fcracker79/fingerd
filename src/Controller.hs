@@ -32,7 +32,7 @@ data ResponseG v a where
   DeleteUserResp :: ResponseG ServiceEditK DeleteUserK
   UpdateUserResp :: ResponseG ServiceEditK UpdateUserK
 
-newtype RespondG v m = RespondG (forall a. RequestG v a -> m (ResponseG v a))
+newtype Respond v m = Respond (forall a. RequestG v a -> m (ResponseG v a))
 
 render :: ResponseG v a -> ByteString
 render (GetUserResp n) = renderUser n
@@ -45,8 +45,8 @@ data Request v = forall a. Request (RequestG v a)
 
 data Response v = forall a. Response (ResponseG v a)
 
-applyRespond :: Functor m => RespondG v m -> Request v -> m (Response v)
-applyRespond (RespondG f) (Request x) = Response <$> f x
+applyRespond :: Functor m => Respond v m -> Request v -> m (Response v)
+applyRespond (Respond f) (Request x) = Response <$> f x
 
 type Parser v = ByteString -> Maybe (Request v)
 

@@ -34,16 +34,21 @@ import Network.Socket
   )
 import Network.Socket.ByteString (recv, send, sendAll)
 
-handleQuery :: Parser v -> RespondG v Managed -> Socket -> Managed ()
+type ServerHandler = Socket -> Managed ()
+
+handleQuery
+  :: Parser v -- ^ a parser for the 'v' service
+  -> Respond v Managed -- ^ handler for 'v' domain requests
+  -> ServerHandler
 handleQuery parse respond soc = void $ do
   msg <- liftIO $ recv soc 1024
   case parse msg of
     Nothing -> liftIO . send soc $ "not parse"
     Just input -> do
-      Response output <- applyRespond respond input
+      Response output <- respond `applyRespond` input
       liftIO . send soc . render $ output
 
-server :: ServiceName -> (Socket -> Managed ()) -> IO ()
+server :: ServiceName -> ServerHandler -> IO ()
 server port handler = withSocketsDo $ do
   serveraddr : _ <- getAddrInfo
     do Just $ defaultHints {addrFlags = [AI_PASSIVE]}
@@ -52,11 +57,11 @@ server port handler = withSocketsDo $ do
   sock <- socket (addrFamily serveraddr) Stream defaultProtocol
   bind sock (addrAddress serveraddr)
   listen sock 1
-  runManaged $ handleQueries handler sock
+  runManaged $ accepter handler sock
   close sock
 
-handleQueries :: (Socket -> Managed ()) -> Socket -> Managed ()
-handleQueries handler sock = forever $ do
+accepter :: ServerHandler -> Socket -> Managed ()
+accepter handler sock = forever $ do
   (soc, _) <- liftIO $ accept sock
   liftIO $ putStrLn "got connection, handling query"
   handler soc
