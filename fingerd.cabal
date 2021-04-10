@@ -72,6 +72,15 @@ library
 
 executable fingerd
   main-is: Main.hs
+  other-modules:
+      Debug
+      Domain.User
+      Domain.UserService
+      Repository.Database
+      Repository.UserRepository
+      Service
+      TCPServer
+      Paths_fingerd
   hs-source-dirs:
       src
   default-extensions:

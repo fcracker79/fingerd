@@ -1,6 +1,9 @@
 module Main where
 
 import qualified Debug as D
+import TCPServer (server)
+import Domain.UserService (responder)
+import Repository.Database (pool)
 
 main :: IO ()
-main = D.main
+main = pool >>= server "7979" . responder 

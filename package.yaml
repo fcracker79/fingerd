@@ -44,7 +44,6 @@ library:
 executables:
   fingerd:
     main:                Main.hs
-    other-modules:       []
     source-dirs:         src
     ghc-options:
     - -threaded

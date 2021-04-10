@@ -19,13 +19,14 @@ import Network.Socket
   , getAddrInfo
   , listen
   , socket
-  , withSocketsDo
+  , withSocketsDo, ServiceName
   )
 import Network.Socket.ByteString (recv, send, sendAll)
 import Repository.UserRepository
 import Service
+import Control.Monad.Managed
 
-logAndEcho :: Socket -> IO ()
+{- logAndEcho :: Socket -> IO ()
 logAndEcho sock = forever $ do
   (soc, _) <- accept sock
   printAndKickback soc
@@ -34,30 +35,30 @@ logAndEcho sock = forever $ do
     printAndKickback conn = do
       msg <- recv conn 1024
       print msg
-      sendAll conn msg
+      sendAll conn msg -}
 
-execute :: Respond -> IO ()
-execute respond = withSocketsDo $ do
+server :: ServiceName -> Respond Managed -> IO ()
+server port respond = withSocketsDo $ do
   serveraddr : _ <- getAddrInfo
     do Just $ defaultHints {addrFlags = [AI_PASSIVE]}
     do Nothing
-    do Just "79"
+    do Just port
   sock <- socket (addrFamily serveraddr) Stream defaultProtocol
   bind sock (addrAddress serveraddr)
   listen sock 1
-  handleQueries respond sock
+  runManaged $ handleQueries respond sock
   close sock
 
-handleQuery :: Respond -> Socket -> IO ()
+handleQuery :: Respond Managed -> Socket -> Managed ()
 handleQuery respond soc = void $ do
-  msg <- recv soc 1024
-  send soc =<< case msg of
+  msg <- liftIO $ recv soc 1024
+  liftIO . send soc =<< case msg of
     "\r\n" -> respond ReqUsers
     name -> respond $ ReqUser $ decodeUtf8 name
 
-handleQueries :: Respond -> Socket -> IO ()
+handleQueries :: Respond Managed -> Socket -> Managed ()
 handleQueries respond sock = forever $ do
-  (soc, _) <- accept sock
-  putStrLn "Got connection, handling query"
+  (soc, _) <- liftIO $ accept sock  
+  liftIO $ putStrLn "got connection, handling query"
   handleQuery respond soc
-  close soc
+  liftIO $ close soc
