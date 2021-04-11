@@ -6,7 +6,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
-module Controller where
+module GadtController where
 
 import Control.Applicative ((<|>))
 import Data.Attoparsec.ByteString.Char8
@@ -18,7 +18,10 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf16BE, encodeUtf8)
 import Domain.User (User (..), UserData (..), UserName, renderUser, renderUsers)
-import Repository.UserRepository
+import Domain.Parser ( parseUser, parseUserName, parseUserData )
+import Control.Monad.Managed
+import Repository.Database
+import Domain.UserService
 
 -- | index the API in types
 data APIPoints = GetUserAPI | GetUsersAPI | SaveUserAPI | DeleteUserAPI | UpdateUserAPI
@@ -82,20 +85,16 @@ parseEdit =
     <|> Request . DeleteUserReq <$> do string "-" >> space >> parseUserName
     <|> Request . UpdateUserReq <$> do string "~" >> space >> parseUser
 
-parseUser :: Parser User
-parseUser = do 
-  id <- decimal 
-  space
-  char ','
-  User id <$> parseUserData
 
-parseUserName :: Parser UserName
-parseUserName = decodeUtf8 <$> takeByteString
+responderQuery :: MonadManaged m => Respond ServiceQueryType (WithPool m)
+responderQuery = Respond \case
+  GetUsersReq -> GetUsersResp <$> getUsers 
+  GetUserReq user -> GetUserResp <$> getUser user 
 
--- TODO: validate
-parseUserData :: Parser UserData
-parseUserData = do
-  [username, shell, homeDirectory, realName, phone] <-
-    fmap (T.strip . decodeUtf8)
-      <$> A.takeWhile (/= ',') `sepBy` char ','
-  pure $ UserData {..}
+responderEdit :: MonadManaged m => Respond ServiceEditType (WithPool m)
+responderEdit = Respond \case
+  SaveUserReq user -> do 
+    saveUser user
+    pure $ SaveUserResp True 
+  UpdateUserReq user -> pure $ UpdateUserResp False
+  DeleteUserReq userName -> pure $ DeleteUserResp False 

@@ -25,10 +25,11 @@ source-repository head
 
 library
   exposed-modules:
-      Controller
-      ControllerSimple
+      Domain.Parser
       Domain.User
       Domain.UserService
+      ExistentialController
+      GadtController
       Main
       Repository.Database
       Repository.UserRepository
@@ -58,6 +59,7 @@ library
     , containers
     , exceptions
     , managed
+    , mmorph
     , monad-loops
     , mtl
     , network
@@ -76,10 +78,11 @@ library
 executable fingerd
   main-is: Main.hs
   other-modules:
-      Controller
-      ControllerSimple
+      Domain.Parser
       Domain.User
       Domain.UserService
+      ExistentialController
+      GadtController
       Repository.Database
       Repository.UserRepository
       Server
@@ -109,6 +112,7 @@ executable fingerd
     , exceptions
     , fingerd
     , managed
+    , mmorph
     , monad-loops
     , mtl
     , network
@@ -156,6 +160,7 @@ test-suite integration
     , fingerd
     , hspec
     , managed
+    , mmorph
     , monad-loops
     , mtl
     , network
@@ -204,6 +209,7 @@ test-suite unit
     , exceptions
     , hspec
     , managed
+    , mmorph
     , monad-loops
     , mtl
     , network

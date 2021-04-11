@@ -9,13 +9,23 @@ import Control.Monad.Managed
   , MonadIO (liftIO)
   , runManaged
   )
-import Controller
+import Control.Monad.Trans.Maybe (MaybeT (runMaybeT))
+import Data.Attoparsec.ByteString.Char8 (Parser, parseOnly)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Data.ByteString.Internal (w2c)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Domain.User
+import ExistentialController (Controller, runController)
+import GadtController
+  ( Request
+  , Respond
+  , Response (Response)
+  , applyRespond
+  , render
+  )
 import Network.Socket
   ( AddrInfo (addrAddress, addrFamily, addrFlags)
   , AddrInfoFlag (AI_PASSIVE)
@@ -33,22 +43,30 @@ import Network.Socket
   , withSocketsDo
   )
 import Network.Socket.ByteString (recv, send, sendAll)
-import Data.Attoparsec.ByteString.Char8
-import qualified Data.Text as T
 
 type ServerHandler = Socket -> Managed ()
 
-serverHandler
+-- build from GADTs base solution
+gadtServerHandler
   :: Parser (Request v) -- ^ a parser for the 'v' service
   -> Respond v Managed -- ^ handler for 'v' domain requests
   -> ServerHandler
-serverHandler parse respond soc = void $ do
+gadtServerHandler parse respond soc = void $ do
   msg <- liftIO $ recv soc 1024
   case parseOnly parse msg of
     Left e -> liftIO . send soc $ "not parse: " <> encodeUtf8 (T.pack e)
     Right input -> do
       Response output <- respond `applyRespond` input
       liftIO . send soc . render $ output
+
+-- | build from ControllerSimple solution
+existentialServerHandler
+  :: Controller Managed
+  -> ServerHandler
+existentialServerHandler controller soc = void $ do
+  msg <- liftIO $ recv soc 1024
+  moutput <- runMaybeT $ runController controller msg
+  liftIO . send soc $ fromMaybe "command not parsed" moutput
 
 server :: ServiceName -> ServerHandler -> IO ()
 server port handler = withSocketsDo $ do
