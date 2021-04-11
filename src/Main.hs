@@ -30,7 +30,7 @@ mainWith serverHandlerQuery serverHandlerEdit = do
   TG.forkIO group $
     catchAll
       do
-        server "7978" $ serverHandlerQuery pooling
+        server "79" $ serverHandlerQuery pooling
       print
   TG.forkIO group $
     catchAll

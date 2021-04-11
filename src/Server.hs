@@ -3,7 +3,6 @@
 
 module Server where
 
-import Control.Exception (bracket)
 import Control.Monad (forever, void)
 import Control.Monad.Managed
   ( Managed
@@ -48,6 +47,8 @@ import Network.Socket
 import Network.Socket.ByteString (recv, send, sendAll)
 import Control.Concurrent.Thread (forkIO)
 import Control.Monad.Catch (catchAll)
+import Prelude hiding (bracket)
+import Control.Exception (bracket)
 
 type ServerHandler = Socket -> Managed ()
 
@@ -93,5 +94,5 @@ accepter handler sock = forever do
   soc <- fst <$> accept sock
   forkIO $ bracket  
       do pure soc  
-      do runManaged . handler 
       do close   
+      do runManaged . handler 
