@@ -16,7 +16,6 @@ import Database.SQLite.Simple.Types (Null (..), Query)
 import Domain.User (User (..), UserData (..), UserName)
 import Text.RawString.QQ (r)
 import Database.SQLite.Simple.ToField (ToField(..))
-import Debug.Trace(trace)
 
 instance FromRow User where
   fromRow =
@@ -100,7 +99,6 @@ getUsers dbConn = fmap (username . userData) <$> query_ dbConn allUsers
 saveUser :: Connection -> UserData -> IO UserName
 saveUser dbConn user@UserData {..} = do
   existingUser <- runMaybeT $ getUser dbConn username
-  -- TODO there must be a better way to do thid
   case existingUser of
     Nothing -> do
       execute dbConn insertUser (Null, username, shell, homeDirectory, realName, phone)
@@ -109,7 +107,6 @@ saveUser dbConn user@UserData {..} = do
 
 
 updateUser :: Connection -> UserData -> IO Bool
---TODO how can I use RecordWildCards with User? @paolino
 updateUser dbConn UserData{..} = do 
   existingUser <- runMaybeT $ getUser dbConn username
   case existingUser of
@@ -122,7 +119,7 @@ deleteUser :: Connection -> UserName -> IO Bool
 deleteUser dbConn userName = do
   existingUser <- runMaybeT $ getUser dbConn userName
   case existingUser of
-    Nothing -> trace ("NON TROVATO" ++ T.unpack userName ++ "#") $ return False 
+    Nothing -> return False 
     Just _ -> do
       execute dbConn removeUser $ Only userName
       return True

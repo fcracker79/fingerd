@@ -4,6 +4,7 @@ import Data.Pool (Pool, createPool, withResource)
 import Database.SQLite.Simple (Connection, open, close)
 import Control.Monad.Managed (MonadManaged, managed, liftIO)
 import Control.Monad.Reader
+    ( MonadIO(liftIO), ReaderT(runReaderT), MonadReader(ask) )
 
 newtype Pooling m = Pooling {runPooling :: forall a. WithPool m a -> m a}
 -- | open the SQLite database and create a connection pool
