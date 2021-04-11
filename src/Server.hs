@@ -10,12 +10,13 @@ import Control.Monad.Managed
   , runManaged
   )
 import Controller
+    ( Response(Response), Request, Respond, render, applyRespond )
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Data.ByteString.Internal (w2c)
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Domain.User
+import Domain.User ()
 import Network.Socket
   ( AddrInfo (addrAddress, addrFamily, addrFlags)
   , AddrInfoFlag (AI_PASSIVE)
@@ -33,7 +34,7 @@ import Network.Socket
   , withSocketsDo
   )
 import Network.Socket.ByteString (recv, send, sendAll)
-import Data.Attoparsec.ByteString.Char8
+import Data.Attoparsec.ByteString.Char8 ( Parser, parseOnly )
 import qualified Data.Text as T
 
 type ServerHandler = Socket -> Managed ()

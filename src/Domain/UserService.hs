@@ -8,6 +8,12 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Managed (MonadManaged, managed)
 import Control.Monad.Trans.Maybe (MaybeT (runMaybeT))
 import Controller
+    ( Respond(..),
+      ResponseG(DeleteUserResp, GetUsersResp, GetUserResp, SaveUserResp,
+                UpdateUserResp),
+      RequestG(DeleteUserReq, GetUsersReq, GetUserReq, SaveUserReq,
+               UpdateUserReq),
+      ServiceKind(ServiceQueryType, ServiceEditType) )
 import Data.ByteString (ByteString)
 import Data.Pool (Pool, withResource)
 import qualified Data.Text as T
@@ -37,5 +43,7 @@ responderEdit pool = Respond \case
   SaveUserReq user -> executeM pool $ \conn -> do
     R.saveUser conn user
     pure $ SaveUserResp True 
-  UpdateUserReq user -> pure $ UpdateUserResp False
-  DeleteUserReq userName -> pure $ DeleteUserResp False 
+  UpdateUserReq user -> executeM pool $ \conn -> do
+    UpdateUserResp <$> R.updateUser conn user
+  DeleteUserReq userName -> executeM pool $ \conn -> do
+    DeleteUserResp <$> R.deleteUser conn userName 

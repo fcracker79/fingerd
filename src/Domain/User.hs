@@ -28,7 +28,7 @@ data UserData = UserData
 
 renderUser :: Maybe User -> ByteString
 renderUser Nothing = "No such user"
-renderUser (Just (User _ (UserData username shell homeDir realName _))) =
+renderUser (Just (User _ (UserData username shell homeDir realName phoneNumber))) =
   BS.concat
     [  "Login: "
     , e username
@@ -41,6 +41,9 @@ renderUser (Just (User _ (UserData username shell homeDir realName _))) =
     , "\t\t\t"
     , "Shell: "
     , e shell
+    , "\n"
+    , "Phone: "
+    , e phoneNumber
     , "\n"
     ]
   where

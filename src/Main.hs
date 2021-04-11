@@ -7,7 +7,7 @@ import Controller ( parseQuery, parseEdit )
 import Domain.UserService (ensureDatabase, responderEdit, responderQuery)
 import Repository.Database (newPool)
 import Server ( serverHandler, server )
-import Control.Monad.Catch
+import Control.Monad.Catch ( catchAll )
 
 main :: IO ()
 main = do

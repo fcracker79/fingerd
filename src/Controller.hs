@@ -10,6 +10,7 @@ module Controller where
 
 import Control.Applicative ((<|>))
 import Data.Attoparsec.ByteString.Char8
+    ( Parser, char, decimal, space, string, takeByteString, sepBy )
 import qualified Data.Attoparsec.ByteString.Char8 as A
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
@@ -18,7 +19,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf16BE, encodeUtf8)
 import Domain.User (User (..), UserData (..), UserName, renderUser, renderUsers)
-import Repository.UserRepository
+import Repository.UserRepository ()
 
 -- | index the API in types
 data APIPoints = GetUserAPI | GetUsersAPI | SaveUserAPI | DeleteUserAPI | UpdateUserAPI
@@ -32,7 +33,7 @@ data RequestG v a where
   GetUserReq :: Text -> RequestG ServiceQueryType GetUserAPI
   SaveUserReq :: UserData -> RequestG ServiceEditType SaveUserAPI
   DeleteUserReq :: UserName -> RequestG ServiceEditType DeleteUserAPI
-  UpdateUserReq :: User -> RequestG ServiceEditType UpdateUserAPI
+  UpdateUserReq :: UserData -> RequestG ServiceEditType UpdateUserAPI
 
 -- | all responses with their arguments indexed by API point and service types
 data ResponseG v a where
@@ -50,8 +51,8 @@ render :: ResponseG v a -> ByteString
 render (GetUserResp n) = renderUser n
 render (GetUsersResp n) = renderUsers n
 render (SaveUserResp b) = if b then "Ok" else "User already present"
-render (DeleteUserResp b) = "not implemented"
-render (UpdateUserResp b) = "not implemented"
+render (DeleteUserResp b) = if b then "Ok" else "Could not delete user"
+render (UpdateUserResp b) = if b then "Ok" else "Could not update user"
 
 -- | any request for a 'v' service
 data Request v = forall a. Request (RequestG v a)
@@ -76,15 +77,8 @@ parseQuery =
 parseEdit :: Parser (Request ServiceEditType)
 parseEdit =
   Request . SaveUserReq <$> do string "+" >> space >> parseUserData
-    <|> Request . DeleteUserReq <$> do string "-" >> space >> parseUserName
-    <|> Request . UpdateUserReq <$> do string "~" >> space >> parseUser
-
-parseUser :: Parser User
-parseUser = do 
-  id <- decimal 
-  space
-  char ','
-  User id <$> parseUserData
+    <|> Request . DeleteUserReq . T.strip <$> do string "-" >> space >> parseUserName
+    <|> Request . UpdateUserReq <$> do string "~" >> space >> parseUserData
 
 parseUserName :: Parser UserName
 parseUserName = decodeUtf8 <$> takeByteString
