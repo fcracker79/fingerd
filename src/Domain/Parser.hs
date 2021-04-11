@@ -18,7 +18,7 @@ parseUser = do
   User id <$> parseUserData
 
 parseUserName :: Parser UserName
-parseUserName = decodeUtf8 <$> takeByteString
+parseUserName = T.strip . decodeUtf8 <$> takeByteString
 
 -- TODO: validate
 parseUserData :: Parser UserData

@@ -20,7 +20,6 @@ ensureDatabase = withPool R.createDatabase
 
 getUsers :: MonadManaged m => WithPool m [UserName]
 getUsers = withPool R.getUsers
-
     
 getUser :: MonadManaged m => UserName -> WithPool m (Maybe User)
 getUser user = withPool do \conn -> runMaybeT $ R.getUser conn user
@@ -29,10 +28,12 @@ saveUser :: MonadManaged m => UserData -> WithPool m UserName
 saveUser user = withPool $ \conn -> do
     R.saveUser conn user
 
-deleteUser :: MonadManaged m => UserName -> WithPool m UserName
-deleteUser = error "not implemented"
+deleteUser :: MonadManaged m => UserName -> WithPool m Bool
+deleteUser userName = withPool $ \conn -> do
+    R.deleteUser conn userName
 
-updateUser :: MonadManaged m => User -> WithPool m UserName
-updateUser = error "not implemented"
+updateUser :: MonadManaged m => UserData -> WithPool m Bool
+updateUser user = withPool $ \conn -> do
+    R.updateUser conn user
 
 

@@ -10,6 +10,7 @@ module GadtController where
 
 import Control.Applicative ((<|>))
 import Data.Attoparsec.ByteString.Char8
+    ( Parser, char, decimal, space, string, takeByteString, sepBy )
 import qualified Data.Attoparsec.ByteString.Char8 as A
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
@@ -35,7 +36,7 @@ data RequestG v a where
   GetUserReq :: Text -> RequestG ServiceQueryType GetUserAPI
   SaveUserReq :: UserData -> RequestG ServiceEditType SaveUserAPI
   DeleteUserReq :: UserName -> RequestG ServiceEditType DeleteUserAPI
-  UpdateUserReq :: User -> RequestG ServiceEditType UpdateUserAPI
+  UpdateUserReq :: UserData -> RequestG ServiceEditType UpdateUserAPI
 
 -- | all responses with their arguments indexed by API point and service types
 data ResponseG v a where
@@ -56,8 +57,8 @@ render :: ResponseG v a -> ByteString
 render (GetUserResp n) = renderUser n
 render (GetUsersResp n) = renderUsers n
 render (SaveUserResp b) = if b then "Ok" else "User already present"
-render (DeleteUserResp b) = "not implemented"
-render (UpdateUserResp b) = "not implemented"
+render (DeleteUserResp b) = if b then "Ok" else "Could not delete user"
+render (UpdateUserResp b) = if b then "Ok" else "Could not update user"
 
 -- | any request for a 'v' service
 data Request v = forall a. Request (RequestG v a)
@@ -69,8 +70,6 @@ data Response v = forall a. Response (ResponseG v a)
 applyRespond :: Functor m => Respond v m -> Request v -> m (Response v)
 applyRespond (Respond f) (Request x) = Response <$> f x
 
--- | parse any request, TODO use attoparsec
--- type Parser v = ByteString -> Maybe (Request v)
 
 -- | parser for the ServiceQueryType
 parseQuery :: Parser (Request ServiceQueryType)
@@ -83,7 +82,7 @@ parseEdit :: Parser (Request ServiceEditType)
 parseEdit =
   Request . SaveUserReq <$> do string "+" >> space >> parseUserData
     <|> Request . DeleteUserReq <$> do string "-" >> space >> parseUserName
-    <|> Request . UpdateUserReq <$> do string "~" >> space >> parseUser
+    <|> Request . UpdateUserReq <$> do string "~" >> space >> parseUserData
 
 
 responderQuery :: MonadManaged m => Respond ServiceQueryType (WithPool m)
@@ -96,5 +95,7 @@ responderEdit = Respond \case
   SaveUserReq user -> do 
     saveUser user
     pure $ SaveUserResp True 
-  UpdateUserReq user -> pure $ UpdateUserResp False
-  DeleteUserReq userName -> pure $ DeleteUserResp False 
+  UpdateUserReq user -> do 
+    UpdateUserResp <$> updateUser user   
+  DeleteUserReq userName -> do 
+    DeleteUserResp <$> deleteUser userName 

@@ -15,6 +15,8 @@ import Database.SQLite.Simple (Connection, FromRow (..), Only (..), Query, ToRow
 import Database.SQLite.Simple.Types (Null (..), Query)
 import Domain.User (User (..), UserData (..), UserName)
 import Text.RawString.QQ (r)
+import Database.SQLite.Simple.ToField (ToField(..))
+import Debug.Trace(trace)
 
 instance FromRow User where
   fromRow =
@@ -53,11 +55,18 @@ createUsers =
 insertUser :: Query
 insertUser = "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)"
 
+alterUser :: Query
+alterUser = "UPDATE users SET shell = ?, homeDirectory = ?, realName = ?, phone = ? WHERE username = ?"
+
 allUsers :: Query
 allUsers = "SELECT * from users"
 
 getUserQuery :: Query
 getUserQuery = "SELECT * from users where username = ?"
+
+removeUser :: Query
+removeUser = "DELETE FROM users WHERE username = ?"
+
 
 data DuplicateData = DuplicateData deriving (Eq, Show, Exception)
 
@@ -97,3 +106,23 @@ saveUser dbConn user@UserData {..} = do
       execute dbConn insertUser (Null, username, shell, homeDirectory, realName, phone)
       return username
     _ -> return username
+
+
+updateUser :: Connection -> UserData -> IO Bool
+--TODO how can I use RecordWildCards with User? @paolino
+updateUser dbConn UserData{..} = do 
+  existingUser <- runMaybeT $ getUser dbConn username
+  case existingUser of
+    Nothing -> return False 
+    Just _ -> do
+      execute dbConn alterUser (shell , homeDirectory , realName , phone , username )
+      return True
+
+deleteUser :: Connection -> UserName -> IO Bool
+deleteUser dbConn userName = do
+  existingUser <- runMaybeT $ getUser dbConn userName
+  case existingUser of
+    Nothing -> trace ("NON TROVATO" ++ T.unpack userName ++ "#") $ return False 
+    Just _ -> do
+      execute dbConn removeUser $ Only userName
+      return True

@@ -74,11 +74,11 @@ editController =
   , Handler
       do string "-" >> space >> parseUserName
       do deleteUser
-      do encodeUtf8
+      do \b -> if b then "Ok" else "Could not delete user" 
   , Handler
-      do string "~" >> space >> parseUser
+      do string "~" >> space >> parseUserData
       do updateUser
-      do encodeUtf8
+      do \b -> if b then "Ok" else "Could not update user" 
   ]
 
 -- (:) do Handler
