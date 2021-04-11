@@ -6,7 +6,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
-module Controller where
+module GadtController where
 
 import Control.Applicative ((<|>))
 import Data.Attoparsec.ByteString.Char8
@@ -19,7 +19,10 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf16BE, encodeUtf8)
 import Domain.User (User (..), UserData (..), UserName, renderUser, renderUsers)
-import Repository.UserRepository ()
+import Domain.Parser ( parseUser, parseUserName, parseUserData )
+import Control.Monad.Managed
+import Repository.Database
+import Domain.UserService
 
 -- | index the API in types
 data APIPoints = GetUserAPI | GetUsersAPI | SaveUserAPI | DeleteUserAPI | UpdateUserAPI
@@ -46,6 +49,9 @@ data ResponseG v a where
 -- | a generic handler for any request that has to produce the right type of response
 newtype Respond v m = Respond (forall a. RequestG v a -> m (ResponseG v a))
 
+hoistRespond :: (forall a . m a -> n a) -> Respond v m -> Respond v n
+hoistRespond n (Respond f) = Respond $ n <$> f
+
 -- | render all responses
 render :: ResponseG v a -> ByteString
 render (GetUserResp n) = renderUser n
@@ -64,8 +70,6 @@ data Response v = forall a. Response (ResponseG v a)
 applyRespond :: Functor m => Respond v m -> Request v -> m (Response v)
 applyRespond (Respond f) (Request x) = Response <$> f x
 
--- | parse any request, TODO use attoparsec
--- type Parser v = ByteString -> Maybe (Request v)
 
 -- | parser for the ServiceQueryType
 parseQuery :: Parser (Request ServiceQueryType)
@@ -77,16 +81,21 @@ parseQuery =
 parseEdit :: Parser (Request ServiceEditType)
 parseEdit =
   Request . SaveUserReq <$> do string "+" >> space >> parseUserData
-    <|> Request . DeleteUserReq . T.strip <$> do string "-" >> space >> parseUserName
+    <|> Request . DeleteUserReq <$> do string "-" >> space >> parseUserName
     <|> Request . UpdateUserReq <$> do string "~" >> space >> parseUserData
 
-parseUserName :: Parser UserName
-parseUserName = decodeUtf8 <$> takeByteString
 
--- TODO: validate
-parseUserData :: Parser UserData
-parseUserData = do
-  [username, shell, homeDirectory, realName, phone] <-
-    fmap (T.strip . decodeUtf8)
-      <$> A.takeWhile (/= ',') `sepBy` char ','
-  pure $ UserData {..}
+responderQuery :: MonadManaged m => Respond ServiceQueryType (WithPool m)
+responderQuery = Respond \case
+  GetUsersReq -> GetUsersResp <$> getUsers 
+  GetUserReq user -> GetUserResp <$> getUser user 
+
+responderEdit :: MonadManaged m => Respond ServiceEditType (WithPool m)
+responderEdit = Respond \case
+  SaveUserReq user -> do 
+    saveUser user
+    pure $ SaveUserResp True 
+  UpdateUserReq user -> do 
+    UpdateUserResp <$> updateUser user   
+  DeleteUserReq userName -> do 
+    DeleteUserResp <$> deleteUser userName 

@@ -110,12 +110,12 @@ saveUser dbConn user@UserData {..} = do
 
 updateUser :: Connection -> UserData -> IO Bool
 --TODO how can I use RecordWildCards with User? @paolino
-updateUser dbConn user = do 
-  existingUser <- runMaybeT $ getUser dbConn $ username user
+updateUser dbConn UserData{..} = do 
+  existingUser <- runMaybeT $ getUser dbConn username
   case existingUser of
     Nothing -> return False 
     Just _ -> do
-      execute dbConn alterUser (shell user, homeDirectory user, realName user, phone user, username user)
+      execute dbConn alterUser (shell , homeDirectory , realName , phone , username )
       return True
 
 deleteUser :: Connection -> UserName -> IO Bool

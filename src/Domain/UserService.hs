@@ -1,49 +1,39 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs, NoMonomorphismRestriction #-}
 
 module Domain.UserService where
 
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Managed (MonadManaged, managed)
 import Control.Monad.Trans.Maybe (MaybeT (runMaybeT))
-import Controller
-    ( Respond(..),
-      ResponseG(DeleteUserResp, GetUsersResp, GetUserResp, SaveUserResp,
-                UpdateUserResp),
-      RequestG(DeleteUserReq, GetUsersReq, GetUserReq, SaveUserReq,
-               UpdateUserReq),
-      ServiceKind(ServiceQueryType, ServiceEditType) )
 import Data.ByteString (ByteString)
 import Data.Pool (Pool, withResource)
 import qualified Data.Text as T
 import Database.SQLite.Simple (Connection (Connection))
 import Domain.User (UserData (username), UserName, User)
-import Repository.Database (executeM)
+import Repository.Database (executeM, WithPool, withPool)
 import qualified Repository.UserRepository as R
 
-ensureDatabase :: MonadManaged m => Pool Connection -> m ()
-ensureDatabase pool = executeM pool R.createDatabase
+ensureDatabase :: MonadManaged m => WithPool m ()
+ensureDatabase = withPool R.createDatabase
 
-getUsers :: MonadManaged m => Pool Connection -> m [UserName]
-getUsers pool = executeM pool R.getUsers
-
-responderQuery :: MonadManaged m => Pool Connection -> Respond ServiceQueryType m
-responderQuery pool = Respond \case
-  GetUsersReq -> GetUsersResp <$> getUsers pool
-  GetUserReq user -> GetUserResp <$> getUser pool user 
+getUsers :: MonadManaged m => WithPool m [UserName]
+getUsers = withPool R.getUsers
     
-getUser :: MonadManaged m => Pool Connection -> UserName -> m (Maybe User)
-getUser pool user = executeM
-      pool
-      do \conn -> runMaybeT $ R.getUser conn user
+getUser :: MonadManaged m => UserName -> WithPool m (Maybe User)
+getUser user = withPool do \conn -> runMaybeT $ R.getUser conn user
 
-responderEdit :: MonadManaged m => Pool Connection -> Respond ServiceEditType m
-responderEdit pool = Respond \case
-  SaveUserReq user -> executeM pool $ \conn -> do
+saveUser :: MonadManaged m => UserData -> WithPool m UserName
+saveUser user = withPool $ \conn -> do
     R.saveUser conn user
-    pure $ SaveUserResp True 
-  UpdateUserReq user -> executeM pool $ \conn -> do
-    UpdateUserResp <$> R.updateUser conn user
-  DeleteUserReq userName -> executeM pool $ \conn -> do
-    DeleteUserResp <$> R.deleteUser conn userName 
+
+deleteUser :: MonadManaged m => UserName -> WithPool m Bool
+deleteUser userName = withPool $ \conn -> do
+    R.deleteUser conn userName
+
+updateUser :: MonadManaged m => UserData -> WithPool m Bool
+updateUser user = withPool $ \conn -> do
+    R.updateUser conn user
+
+
