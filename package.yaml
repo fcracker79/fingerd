@@ -21,9 +21,11 @@ description:         Please see the README on GitHub at <https://github.com/fcra
 
 dependencies:
 - aeson 
+- attoparsec
 - base >= 4.7 && < 5
 - bytestring
 - containers 
+- exceptions
 - managed 
 - monad-loops 
 - mtl 
@@ -34,10 +36,10 @@ dependencies:
 - sqlite-simple
 - text 
 - text-format-simple
+- threads
 - transformers 
 - unordered-containers
 - vector
-- threads
 
 library:
   source-dirs: src

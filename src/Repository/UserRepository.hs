@@ -1,41 +1,53 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
-
 {-# LANGUAGE ViewPatterns #-}
+
 module Repository.UserRepository where
 
 import Control.Applicative (empty)
-import Control.Exception (Exception, throwIO)
+import Control.Exception (Exception, throw)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT), runMaybeT)
 import qualified Data.Text as T
 import Database.SQLite.Simple (Connection, FromRow (..), Only (..), Query, ToRow (..), close, execute, execute_, field, query, query_)
 import Database.SQLite.Simple.Types (Null (..), Query)
-import Domain.User (User (..), UserName)
+import Domain.User (User (..), UserData (..), UserName)
 import Text.RawString.QQ (r)
 
 instance FromRow User where
   fromRow =
     User <$> field
-      <*> field
-      <*> field
-      <*> field
-      <*> field
-      <*> field
+      <*> do
+        UserData <$> field
+          <*> field
+          <*> field
+          <*> field
+          <*> field
 
 instance ToRow User where
-  toRow (User id_ username shell homeDir realName phone) =
-    toRow (id_, username, shell, homeDir, realName, phone)
+  toRow (User id_ (UserData username shell homeDir realName phone)) =
+    toRow
+      ( id_
+      , username
+      , shell
+      , homeDir
+      , realName
+      , phone
+      )
 
 createUsers :: Query
 createUsers =
   [r|
   CREATE TABLE IF NOT EXISTS users
-  (id INTEGER PRIMARY KEY AUTOINCREMENT,
-  username TEXT UNIQUE,
-  shell TEXT, homeDirectory TEXT,
-  realName TEXT, phone TEXT)
+    ( id INTEGER PRIMARY KEY AUTOINCREMENT
+    , username TEXT UNIQUE
+    , shell TEXT
+    , homeDirectory TEXT
+    , realName TEXT
+    , phone TEXT
+    )
 |]
 
 insertUser :: Query
@@ -47,9 +59,7 @@ allUsers = "SELECT * from users"
 getUserQuery :: Query
 getUserQuery = "SELECT * from users where username = ?"
 
-data DuplicateData = DuplicateData deriving (Eq, Show)
-
-instance Exception DuplicateData
+data DuplicateData = DuplicateData deriving (Eq, Show, Exception)
 
 type UserRow = (Null, T.Text, T.Text, T.Text, T.Text, T.Text)
 
@@ -68,25 +78,22 @@ createDatabase conn = do
     userName = "callen"
 
 getUser :: Connection -> UserName -> MaybeT IO User
-getUser conn (T.strip -> username) = do
-  results <- liftIO (query conn getUserQuery (Only username))
+getUser conn username = do
+  results <- liftIO $ query conn getUserQuery $ Only username
   case results of
     [] -> empty
-    [user] -> return user
-    _ -> (liftIO . throwIO) DuplicateData
+    [user] -> pure user
+    _ -> throw DuplicateData
 
-returnUsers :: Connection -> IO [UserName]
-returnUsers dbConn = do
-  rows <- query_ dbConn allUsers
-  return $ map username rows
+getUsers :: Connection -> IO [UserName]
+getUsers dbConn = fmap (username . userData) <$> query_ dbConn allUsers
 
-
-saveUser :: Connection -> User -> IO UserName
-saveUser dbConn user = do
-    existingUser <- runMaybeT $ getUser dbConn $ username user
-    -- TODO there must be a better way to do thid
-    case existingUser of
-      Nothing -> do
-        execute dbConn insertUser $ toRow user
-        return $ username user
-      _ -> return $ username user
+saveUser :: Connection -> UserData -> IO UserName
+saveUser dbConn user@UserData {..} = do
+  existingUser <- runMaybeT $ getUser dbConn username
+  -- TODO there must be a better way to do thid
+  case existingUser of
+    Nothing -> do
+      execute dbConn insertUser (Null, username, shell, homeDirectory, realName, phone)
+      return username
+    _ -> return username
