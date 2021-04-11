@@ -20,9 +20,10 @@ import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf16BE, encodeUtf8)
 import Domain.User (User (..), UserData (..), UserName, renderUser, renderUsers)
 import Domain.Parser ( parseUser, parseUserName, parseUserData )
-import Control.Monad.Managed
-import Repository.Database
+import Control.Monad.Managed ( MonadManaged )
+import Repository.Database ( WithPool )
 import Domain.UserService
+    ( getUser, getUsers, saveUser, deleteUser, updateUser )
 
 -- | index the API in types
 data APIPoints = GetUserAPI | GetUsersAPI | SaveUserAPI | DeleteUserAPI | UpdateUserAPI

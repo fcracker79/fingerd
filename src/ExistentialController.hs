@@ -8,7 +8,7 @@ import Control.Applicative (empty)
 import Control.Monad (msum, void)
 import Control.Monad.Managed (Managed)
 import Control.Monad.Morph (hoist)
-import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Maybe ( MaybeT(MaybeT) )
 import Data.Attoparsec.ByteString (Parser, parseOnly, string, takeByteString)
 import Data.Attoparsec.ByteString.Char8 (space)
 import Data.ByteString.Char8 (ByteString)
@@ -17,7 +17,7 @@ import Data.Pool (Pool)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Database.SQLite.Simple (Connection)
-import Domain.Parser
+import Domain.Parser ( parseUserName, parseUserData )
 import Domain.User (renderUser, renderUsers)
 import Domain.UserService (deleteUser, getUser, getUsers, saveUser, updateUser)
 import Repository.Database (WithPool)
