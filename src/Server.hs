@@ -42,7 +42,7 @@ import Network.Socket
   , getAddrInfo
   , listen
   , socket
-  , withSocketsDo
+  , withSocketsDo, setSocketOption, SocketOption (ReuseAddr)
   )
 import Network.Socket.ByteString (recv, send, sendAll)
 import Control.Concurrent.Thread (forkIO)
@@ -85,24 +85,25 @@ server port handler = withSocketsDo $ do
   bracket
       do
         sock <- socket (addrFamily serveraddr) Stream defaultProtocol
-        bind sock (addrAddress serveraddr)
+        setSocketOption sock ReuseAddr 1
+        bind sock $ addrAddress serveraddr
         listen sock 1
-        -- print ("listening", sock) 
+        print ("listening", sock) 
         pure sock
       do \s -> do 
-          -- print ("listen closing", s) 
+          print ("listen closing", s) 
           close s
       do accepter $ runManaged . handler
 
 accepter :: (Socket -> IO ()) -> Socket -> IO ()
 accepter handler sock = fix \loop -> do
   asock <- fst <$> accept sock
-  -- print ("accepting", asock) 
+  print ("accepting", asock) 
   withAsync 
     do finally 
         do handler asock 
         do 
-          -- print ("accept closing", asock) 
+          print ("accept closing", asock) 
           close asock 
     do \fork -> loop >> wait fork 
 

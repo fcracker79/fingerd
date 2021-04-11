@@ -23,16 +23,14 @@ mainWith
   :: (Pooling Managed -> ServerHandler) -- ^ 
   -> (Pooling Managed -> ServerHandler) -- ^ 
   -> IO ()
-mainWith serverHandlerQuery serverHandlerEdit = do
-  pooling <- newPool "finger.db"
-  runManaged do   
+mainWith serverHandlerQuery serverHandlerEdit = runManaged do   
+    pooling <- newPool "finger.db"
     runPooling pooling ensureDatabase
-    q <- managed $ withAsync 
+    queryA <- managed $ withAsync 
         do server "79" $ serverHandlerQuery pooling
-    m <- managed $ withAsync 
+    editA <- managed $ withAsync 
         do server "7979" $ serverHandlerEdit pooling
-    liftIO $ void $ waitBoth q m 
-  putStrLn "bye"
+    liftIO $ void $ waitBoth queryA editA 
 
 gadtMain :: IO ()
 gadtMain = mainWith

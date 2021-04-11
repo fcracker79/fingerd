@@ -1,16 +1,20 @@
+{-# LANGUAGE BlockArguments #-}
 module Repository.Database where
 
-import Data.Pool (Pool, createPool, withResource)
+import Data.Pool (Pool, createPool, withResource, destroyAllResources)
 import Database.SQLite.Simple (Connection, open, close)
 import Control.Monad.Managed (MonadManaged, managed, liftIO)
 import Control.Monad.Reader
     ( MonadIO(liftIO), ReaderT(runReaderT), MonadReader(ask) )
+import Control.Exception (bracket)
 
 newtype Pooling m = Pooling {runPooling :: forall a. WithPool m a -> m a}
 -- | open the SQLite database and create a connection pool
-newPool :: FilePath -> IO (Pooling m)
+newPool :: MonadManaged m => FilePath -> m (Pooling m)
 newPool fp = do 
-    pool <- createPool (open fp) close 1 10 100
+    pool <- managed $ bracket 
+        do createPool (open fp) close 1 10 100
+        do destroyAllResources 
     pure $ Pooling $ flip runReaderT pool  
 
 -- | run a IO action picking a Connection from the pool
