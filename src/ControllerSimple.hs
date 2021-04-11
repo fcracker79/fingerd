@@ -16,12 +16,17 @@ import Database.SQLite.Simple (Connection)
 import Control.Monad.Managed ( Managed )
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
+import Data.Functor ((<&>))
+import Repository.Database
 
+-- | the simplest form of an handler
 type RawHandler m = ByteString -> MaybeT m ByteString
 
+-- | once we have an input to apply raw handlers form an alternative (MaybeT m) 
 runRawHandlers :: Monad m => [RawHandler m] -> RawHandler m
-runRawHandlers xs input = msum $ ($ input) <$> xs
+runRawHandlers xs input = msum $ xs <&> ($ input)
 
+-- | we want to be able to split the RawHandler in its logic part + input parser + output renderer
 data Handler m = forall i o.
   Handler
   { parser :: Parser i
@@ -29,28 +34,31 @@ data Handler m = forall i o.
   , renderer :: o -> ByteString
   }
 
+-- | transform from high level lifting the parser failure out to MaybeT
 runHandler :: Monad m => Handler m -> RawHandler m 
 runHandler Handler {..} input = case 
     parseOnly parser input of 
         Left _ -> empty 
         Right x -> MaybeT $ Just . renderer <$> handler x 
 
+-- | the controller data are just a list of handlers
 type Controller m = [Handler m]
 
-runController :: Monad m => [Handler m] -> RawHandler m 
+-- | collapse the controller
+runController :: Monad m => Controller m -> RawHandler m 
 runController = runRawHandlers . fmap runHandler 
 
-getUsersH :: Pool Connection -> Handler Managed
-getUsersH pool = Handler 
+getUsersH ::  Handler (WithPool Managed)
+getUsersH = Handler 
     do void $ string "\r\n" 
-    do const $ getUsers pool
+    do const getUsers 
     do renderUsers 
     
-getUserH :: Pool Connection -> Handler Managed
-getUserH pool = Handler 
+getUserH :: Handler (WithPool Managed)
+getUserH = Handler 
     do T.strip . decodeUtf8 <$> takeByteString
-    do getUser pool 
+    do getUser 
     do renderUser 
 
-queryControllers :: Pool Connection -> [Handler Managed]
-queryControllers pool = ($ pool) <$> [getUsersH, getUserH]
+queryController :: Controller (WithPool Managed)
+queryController = [getUsersH, getUserH]

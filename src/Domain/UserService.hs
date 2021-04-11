@@ -1,6 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs, NoMonomorphismRestriction #-}
 
 module Domain.UserService where
 
@@ -13,28 +13,26 @@ import Data.Pool (Pool, withResource)
 import qualified Data.Text as T
 import Database.SQLite.Simple (Connection (Connection))
 import Domain.User (UserData (username), UserName, User)
-import Repository.Database (executeM)
+import Repository.Database (executeM, WithPool, withPool)
 import qualified Repository.UserRepository as R
 
-ensureDatabase :: MonadManaged m => Pool Connection -> m ()
-ensureDatabase pool = executeM pool R.createDatabase
+ensureDatabase :: MonadManaged m => WithPool m ()
+ensureDatabase = withPool R.createDatabase
 
-getUsers :: MonadManaged m => Pool Connection -> m [UserName]
-getUsers pool = executeM pool R.getUsers
+getUsers :: MonadManaged m => WithPool m [UserName]
+getUsers = withPool R.getUsers
 
-responderQuery :: MonadManaged m => Pool Connection -> Respond ServiceQueryType m
-responderQuery pool = Respond \case
-  GetUsersReq -> GetUsersResp <$> getUsers pool
-  GetUserReq user -> GetUserResp <$> getUser pool user 
+responderQuery :: MonadManaged m => Respond ServiceQueryType (WithPool m)
+responderQuery = Respond \case
+  GetUsersReq -> GetUsersResp <$> getUsers 
+  GetUserReq user -> GetUserResp <$> getUser user 
     
-getUser :: MonadManaged m => Pool Connection -> UserName -> m (Maybe User)
-getUser pool user = executeM
-      pool
-      do \conn -> runMaybeT $ R.getUser conn user
+getUser :: MonadManaged m => UserName -> WithPool m (Maybe User)
+getUser user = withPool do \conn -> runMaybeT $ R.getUser conn user
 
-responderEdit :: MonadManaged m => Pool Connection -> Respond ServiceEditType m
-responderEdit pool = Respond \case
-  SaveUserReq user -> executeM pool $ \conn -> do
+responderEdit :: MonadManaged m => Respond ServiceEditType (WithPool m)
+responderEdit = Respond \case
+  SaveUserReq user -> withPool $ \conn -> do
     R.saveUser conn user
     pure $ SaveUserResp True 
   UpdateUserReq user -> pure $ UpdateUserResp False

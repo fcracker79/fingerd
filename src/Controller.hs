@@ -45,6 +45,9 @@ data ResponseG v a where
 -- | a generic handler for any request that has to produce the right type of response
 newtype Respond v m = Respond (forall a. RequestG v a -> m (ResponseG v a))
 
+hoistRespond :: (forall a . m a -> n a) -> Respond v m -> Respond v n
+hoistRespond n (Respond f) = Respond $ n <$> f
+
 -- | render all responses
 render :: ResponseG v a -> ByteString
 render (GetUserResp n) = renderUser n
