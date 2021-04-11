@@ -3,11 +3,14 @@
 
 module Server where
 
+import Control.Exception (bracket)
 import Control.Monad (forever, void)
 import Control.Monad.Managed
   ( Managed
   , MonadIO (liftIO)
+  , managed
   , runManaged
+  , using
   )
 import Control.Monad.Trans.Maybe (MaybeT (runMaybeT))
 import Data.Attoparsec.ByteString.Char8 (Parser, parseOnly)
@@ -43,6 +46,8 @@ import Network.Socket
   , withSocketsDo
   )
 import Network.Socket.ByteString (recv, send, sendAll)
+import Control.Concurrent.Thread (forkIO)
+import Control.Monad.Catch (catchAll)
 
 type ServerHandler = Socket -> Managed ()
 
@@ -57,7 +62,7 @@ gadtServerHandler parse respond soc = void $ do
     Left e -> liftIO . send soc $ "not parse: " <> encodeUtf8 (T.pack e)
     Right input -> do
       Response output <- respond `applyRespond` input
-      liftIO . send soc . render $ output
+      liftIO . send soc . (<> "\r\n") . render $ output  
 
 -- | build from ControllerSimple solution
 existentialServerHandler
@@ -66,7 +71,7 @@ existentialServerHandler
 existentialServerHandler controller soc = void $ do
   msg <- liftIO $ recv soc 1024
   moutput <- runMaybeT $ runController controller msg
-  liftIO . send soc $ fromMaybe "command not parsed" moutput
+  liftIO . send soc . (<> "\r\n") $ fromMaybe "command not parsed" moutput
 
 server :: ServiceName -> ServerHandler -> IO ()
 server port handler = withSocketsDo $ do
@@ -74,15 +79,19 @@ server port handler = withSocketsDo $ do
     do Just $ defaultHints {addrFlags = [AI_PASSIVE]}
     do Nothing
     do Just port
-  sock <- socket (addrFamily serveraddr) Stream defaultProtocol
-  bind sock (addrAddress serveraddr)
-  listen sock 1
-  runManaged $ accepter handler sock
-  close sock
+  bracket
+      do
+        sock <- socket (addrFamily serveraddr) Stream defaultProtocol
+        bind sock (addrAddress serveraddr)
+        listen sock 1
+        pure sock
+      do close
+      do accepter handler
 
-accepter :: ServerHandler -> Socket -> Managed ()
-accepter handler sock = forever $ do
-  (soc, _) <- liftIO $ accept sock
-  liftIO $ putStrLn "got connection, handling query"
-  handler soc
-  liftIO $ close soc
+accepter :: ServerHandler -> Socket -> IO ()
+accepter handler sock = forever do
+  soc <- fst <$> accept sock
+  forkIO $ bracket  
+      do pure soc  
+      do runManaged . handler 
+      do close   
