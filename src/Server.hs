@@ -1,6 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
 
+{-# LANGUAGE RecordWildCards #-}
 module Server where
 
 import Control.Monad (forever, void)
@@ -29,7 +30,7 @@ import GadtController
   , render
   )
 import Network.Socket
-  ( AddrInfo (addrAddress, addrFamily, addrFlags)
+  ( AddrInfo (..)
   , AddrInfoFlag (AI_PASSIVE)
   , ServiceName
   , Socket
@@ -78,32 +79,26 @@ existentialServerHandler controller soc = void $ do
 
 server :: ServiceName -> ServerHandler -> IO ()
 server port handler = withSocketsDo $ do
-  serveraddr : _ <- getAddrInfo
+  AddrInfo {..} : _ <- getAddrInfo
     do Just $ defaultHints {addrFlags = [AI_PASSIVE]}
     do Nothing
     do Just port
   bracket
       do
-        sock <- socket (addrFamily serveraddr) Stream defaultProtocol
+        sock <- socket addrFamily Stream defaultProtocol
         setSocketOption sock ReuseAddr 1
-        bind sock $ addrAddress serveraddr
+        bind sock addrAddress
         listen sock 1
-        print ("listening", sock) 
         pure sock
-      do \s -> do 
-          print ("listen closing", s) 
-          close s
+      do close 
       do accepter $ runManaged . handler
 
 accepter :: (Socket -> IO ()) -> Socket -> IO ()
 accepter handler sock = fix \loop -> do
   asock <- fst <$> accept sock
-  print ("accepting", asock) 
   withAsync 
     do finally 
         do handler asock 
-        do 
-          print ("accept closing", asock) 
-          close asock 
+        do close asock 
     do \fork -> loop >> wait fork 
 
