@@ -78,8 +78,8 @@ createDatabase conn = do
   case user of
     Nothing -> execute conn insertUser meRow
     _ -> return ()
-  rows <- query_ conn allUsers
-  mapM_ print (rows :: [User])
+  -- rows <- query_ conn allUsers
+  -- mapM_ print (rows :: [User])
   where
     meRow :: UserRow
     meRow = (Null, userName, "/bin/zsh", "/home/callen", "Chris Allen", "555-123-4567")

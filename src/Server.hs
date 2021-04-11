@@ -48,7 +48,9 @@ import Network.Socket.ByteString (recv, send, sendAll)
 import Control.Concurrent.Thread (forkIO)
 import Control.Monad.Catch (catchAll)
 import Prelude hiding (bracket)
-import Control.Exception (bracket)
+import Control.Exception (bracket, finally)
+import Control.Concurrent.Async (async, withAsync, link, wait)
+import Control.Monad.Fix (fix)
 
 type ServerHandler = Socket -> Managed ()
 
@@ -85,14 +87,22 @@ server port handler = withSocketsDo $ do
         sock <- socket (addrFamily serveraddr) Stream defaultProtocol
         bind sock (addrAddress serveraddr)
         listen sock 1
+        -- print ("listening", sock) 
         pure sock
-      do close
-      do accepter handler
+      do \s -> do 
+          -- print ("listen closing", s) 
+          close s
+      do accepter $ runManaged . handler
 
-accepter :: ServerHandler -> Socket -> IO ()
-accepter handler sock = forever do
-  soc <- fst <$> accept sock
-  forkIO $ bracket  
-      do pure soc  
-      do close   
-      do runManaged . handler 
+accepter :: (Socket -> IO ()) -> Socket -> IO ()
+accepter handler sock = fix \loop -> do
+  asock <- fst <$> accept sock
+  -- print ("accepting", asock) 
+  withAsync 
+    do finally 
+        do handler asock 
+        do 
+          -- print ("accept closing", asock) 
+          close asock 
+    do \fork -> loop >> wait fork 
+
