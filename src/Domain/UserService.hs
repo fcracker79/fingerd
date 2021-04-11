@@ -12,18 +12,23 @@ import Data.ByteString (ByteString)
 import Data.Pool (Pool, withResource)
 import qualified Data.Text as T
 import Database.SQLite.Simple (Connection (Connection))
-import Domain.User (UserData (username), UserName)
+import Domain.User (UserData (username), UserName, User)
 import Repository.Database (executeM)
 import qualified Repository.UserRepository as R
 
 ensureDatabase :: MonadManaged m => Pool Connection -> m ()
 ensureDatabase pool = executeM pool R.createDatabase
 
+getUsers :: MonadManaged m => Pool Connection -> m [UserName]
+getUsers pool = executeM pool R.getUsers
+
 responderQuery :: MonadManaged m => Pool Connection -> Respond ServiceQueryType m
 responderQuery pool = Respond \case
-  GetUsersReq -> GetUsersResp <$> executeM pool R.getUsers
-  GetUserReq user ->
-    GetUserResp <$> executeM
+  GetUsersReq -> GetUsersResp <$> getUsers pool
+  GetUserReq user -> GetUserResp <$> getUser pool user 
+    
+getUser :: MonadManaged m => Pool Connection -> UserName -> m (Maybe User)
+getUser pool user = executeM
       pool
       do \conn -> runMaybeT $ R.getUser conn user
 
