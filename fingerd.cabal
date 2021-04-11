@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Controller
+      ControllerSimple
       Domain.User
       Domain.UserService
       Main
@@ -76,6 +77,7 @@ executable fingerd
   main-is: Main.hs
   other-modules:
       Controller
+      ControllerSimple
       Domain.User
       Domain.UserService
       Repository.Database
