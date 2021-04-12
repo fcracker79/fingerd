@@ -2,24 +2,25 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Solution.Existential.Controller where
+module Service.Controller where
 
 import Control.Applicative (empty)
 import Control.Monad (msum, void)
-import Control.Monad.Managed (Managed)
-import Control.Monad.Trans.Maybe ( MaybeT(MaybeT) )
+import Control.Monad.Managed (Managed, liftIO)
+import Control.Monad.Trans.Maybe (MaybeT (MaybeT), runMaybeT)
 import Data.Attoparsec.ByteString (Parser, parseOnly, string, takeByteString)
 import Data.Attoparsec.ByteString.Char8 (space)
 import Data.ByteString.Char8 (ByteString)
 import Data.Functor ((<&>))
-import Data.Pool (Pool)
+import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Database.SQLite.Simple (Connection)
-import Domain.Parser ( parseUserName, parseUserData )
-import Domain.User (renderUser, renderUsers)
-import Domain.UserService (deleteUser, getUser, getUsers, saveUser, updateUser)
-import Repository.Database (WithPool)
+import Network.Socket (Socket)
+import Network.Socket.ByteString (recv, send)
+import Service.Parse (parseUserData, parseUserName)
+import Service.Render (renderUser, renderUsers)
+import Database (deleteUser, getUser, getUsers, saveUser, updateUser, HasConnection)
 
 -- | the simplest form of an handler
 type RawHandler m = ByteString -> MaybeT m ByteString
@@ -49,41 +50,34 @@ type Controller m = [Handler m]
 runController :: Monad m => Controller m -> RawHandler m
 runController = runRawHandlers . fmap runHandler
 
-getUsersH :: Handler (WithPool Managed)
-getUsersH = Handler
-  do void $ string "\r\n"
-  do const getUsers
-  do renderUsers
+queryController :: Controller (HasConnection IO)
+queryController =
+  [ Handler
+      do void $ string "\r\n"
+      do const getUsers
+      do renderUsers
+  , Handler
+      do T.strip . decodeUtf8 <$> takeByteString
+      do getUser
+      do renderUser
+  ]
 
-getUserH :: Handler (WithPool Managed)
-getUserH = Handler
-  do T.strip . decodeUtf8 <$> takeByteString
-  do getUser
-  do renderUser
-
-queryController :: Controller (WithPool Managed)
-queryController = [getUsersH, getUserH]
-
-editController :: Controller (WithPool Managed)
+editController :: Controller (HasConnection IO)
 editController =
   [ Handler
-      do string "+" >> space >> parseUserData
+      do string "+" >> space >> parseUserData 
       do saveUser
-      do encodeUtf8
+      do \b -> if b then "Ok" else "Could not create user"
   , Handler
       do string "-" >> space >> parseUserName
       do deleteUser
-      do \b -> if b then "Ok" else "Could not delete user" 
+      do \b -> if b then "Ok" else "Could not delete user"
   , Handler
       do string "~" >> space >> parseUserData
       do updateUser
-      do \b -> if b then "Ok" else "Could not update user" 
-  ]
+      do \b -> if b then "Ok" else "Could not update user"
 
--- (:) do Handler
---         do string "-" >> space >> parseUserName
--- (:) do Handler
---         do string "~" >> space >> parseUser
+    ]
 
 hoistHandler :: (forall a. m a -> n a) -> Handler m -> Handler n
 hoistHandler f (Handler p g r) = Handler p (f . g) r

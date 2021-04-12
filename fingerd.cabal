@@ -25,17 +25,13 @@ source-repository head
 
 library
   exposed-modules:
-      Domain.Parser
-      Domain.User
-      Domain.UserService
+      Database
       Lib.TCPServer
       Main
-      Repository.Database
-      Repository.UserRepository
-      Solution.Existential.Controller
-      Solution.Existential.Server
-      Solution.GADTs.Controller
-      Solution.GADTs.Server
+      Model.User
+      Service.Controller
+      Service.Parse
+      Service.Render
   other-modules:
       Paths_fingerd
   hs-source-dirs:
@@ -63,6 +59,7 @@ library
     , containers
     , exceptions
     , managed
+    , mmorph
     , monad-loops
     , mtl
     , network
@@ -106,6 +103,7 @@ executable fingerd
     , exceptions
     , fingerd
     , managed
+    , mmorph
     , monad-loops
     , mtl
     , network
@@ -154,6 +152,7 @@ test-suite integration
     , fingerd
     , hspec
     , managed
+    , mmorph
     , monad-loops
     , mtl
     , network
@@ -203,6 +202,7 @@ test-suite unit
     , exceptions
     , hspec
     , managed
+    , mmorph
     , monad-loops
     , mtl
     , network

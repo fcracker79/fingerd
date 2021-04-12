@@ -41,6 +41,7 @@ dependencies:
 - transformers 
 - unordered-containers
 - cmdargs
+- mmorph
 
 library:
   source-dirs: src
