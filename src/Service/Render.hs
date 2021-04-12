@@ -5,7 +5,7 @@ import qualified Data.ByteString.Char8 as BS
 import Data.List (intersperse)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
-import Model.User (User (User), UserData (UserData), UserName)
+import User (User (User), UserData (UserData), UserName)
 
 renderUser :: Maybe User -> ByteString
 renderUser Nothing = "No such user"

@@ -1,4 +1,4 @@
-module Model.User where
+module User where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS

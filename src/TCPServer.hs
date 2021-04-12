@@ -2,7 +2,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Lib.TCPServer where
+module TCPServer where
 
 import Control.Concurrent.Async
 import Control.Exception (bracket, finally)

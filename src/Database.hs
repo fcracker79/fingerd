@@ -13,13 +13,21 @@ import Control.Monad.Reader
   , MonadReader (ask)
   , ReaderT (runReaderT)
   )
-import Control.Monad.Trans.Maybe
 import Data.Functor (($>))
 import Data.Text (Text)
 import Database.SQLite.Simple
+    ( Connection,
+      close,
+      execute,
+      open,
+      query,
+      field,
+      Only(Only),
+      FromRow(..),
+      ToRow(..),
+      Query )
 import Database.SQLite.Simple.QQ (sql)
-import Database.SQLite.Simple.Types
-import Model.User
+import User ( UserData(..), User(User, userData), UserName )
 
 -- | open the SQLite database and create a connection pool
 newDB :: MonadManaged m => FilePath -> m Connection

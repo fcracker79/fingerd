@@ -6,7 +6,7 @@ import Data.Attoparsec.ByteString.Char8 (Parser, char, decimal, sepBy, space, ta
 import qualified Data.Attoparsec.ByteString.Char8 as A
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
-import Model.User (User (User), UserData (..), UserName)
+import User (User (User), UserData (..), UserName)
 
 parseUser :: Parser User
 parseUser = do

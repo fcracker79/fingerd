@@ -26,12 +26,12 @@ source-repository head
 library
   exposed-modules:
       Database
-      Lib.TCPServer
       Main
-      Model.User
       Service.Controller
       Service.Parse
       Service.Render
+      TCPServer
+      User
   other-modules:
       Paths_fingerd
   hs-source-dirs:
