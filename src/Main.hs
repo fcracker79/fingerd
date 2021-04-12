@@ -49,7 +49,7 @@ gadtMain = mainWith
         hoistRespond runPooling responderEdit
 
 -- untested
-existentailMain :: IO ()
-existentailMain = mainWith
+existentialMain :: IO ()
+existentialMain = mainWith
   do \Pooling {..} -> existentialServerHandler $ hoistController runPooling queryController
   do \Pooling {..} -> existentialServerHandler $ hoistController runPooling editController
