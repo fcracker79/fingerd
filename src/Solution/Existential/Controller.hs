@@ -7,7 +7,6 @@ module Solution.Existential.Controller where
 import Control.Applicative (empty)
 import Control.Monad (msum, void)
 import Control.Monad.Managed (Managed)
-import Control.Monad.Morph (hoist)
 import Control.Monad.Trans.Maybe ( MaybeT(MaybeT) )
 import Data.Attoparsec.ByteString (Parser, parseOnly, string, takeByteString)
 import Data.Attoparsec.ByteString.Char8 (space)
