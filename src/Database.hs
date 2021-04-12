@@ -59,16 +59,6 @@ instance ToRow UserData where
       , realName
       , phone
       )
-instance ToRow User where
-  toRow (User id_ (UserData username shell homeDir realName phone)) =
-    toRow
-      ( id_
-      , username
-      , shell
-      , homeDir
-      , realName
-      , phone
-      )
 
 queryM :: (MonadReader Connection m, MonadIO m, ToRow q, FromRow r) => Query -> q -> m [r]
 queryM q x = ask >>= \conn -> liftIO $ query conn q x
