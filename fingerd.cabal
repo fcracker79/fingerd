@@ -79,21 +79,9 @@ library
   default-language: Haskell2010
 
 executable fingerd
-  main-is: Main.hs
+  main-is: src/Main.hs
   other-modules:
-      Domain.Parser
-      Domain.User
-      Domain.UserService
-      Lib.TCPServer
-      Repository.Database
-      Repository.UserRepository
-      Solution.Existential.Controller
-      Solution.Existential.Server
-      Solution.GADTs.Controller
-      Solution.GADTs.Server
       Paths_fingerd
-  hs-source-dirs:
-      src
   default-extensions:
       TypeSynonymInstances
       FlexibleInstances

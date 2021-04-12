@@ -48,8 +48,7 @@ library:
 
 executables:
   fingerd:
-    main:                Main.hs
-    source-dirs:         src
+    main:                src/Main.hs
     ghc-options:
     - -threaded
     - -rtsopts
