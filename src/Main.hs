@@ -28,7 +28,7 @@ mainWith serverHandlerQuery serverHandlerEdit = finally
         pooling <- newPool "finger.db"
         runPooling pooling ensureDatabase
         queryA <- managed $ withAsync 
-            do server "79" $ serverHandlerQuery pooling
+            do server "7978" $ serverHandlerQuery pooling
         editA <- managed $ withAsync 
             do server "7979" $ serverHandlerEdit pooling
         liftIO $ void $ waitBoth queryA editA 

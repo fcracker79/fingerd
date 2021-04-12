@@ -99,6 +99,6 @@ accepter handler sock = fix \loop -> do
   withAsync 
     do finally 
         do handler asock 
-        do close asock 
-    do \fork -> loop >> wait fork 
+        do send asock "bye\n" >> close asock 
+    do \fork -> link fork >> loop
 
