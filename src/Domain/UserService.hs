@@ -2,6 +2,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs, NoMonomorphismRestriction #-}
 
+-- | TODO: explain to @paolino why we need this layer
 module Domain.UserService where
 
 import Control.Monad.IO.Class (liftIO)

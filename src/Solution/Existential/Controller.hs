@@ -2,7 +2,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module ExistentialController where
+module Solution.Existential.Controller where
 
 import Control.Applicative (empty)
 import Control.Monad (msum, void)
