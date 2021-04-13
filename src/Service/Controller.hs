@@ -1,12 +1,17 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE OverloadedStrings #-}
 
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Service.Controller where
 
 import Control.Applicative (empty)
 import Control.Monad (msum, void)
 import Control.Monad.Managed (Managed, liftIO)
+import Control.Monad.Reader
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT), runMaybeT)
 import Data.Attoparsec.ByteString (Parser, parseOnly, string, takeByteString)
 import Data.Attoparsec.ByteString.Char8 (space)
@@ -15,12 +20,12 @@ import Data.Functor ((<&>))
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import Database ( deleteUser, getUser, getUsers, saveUser, updateUser, DatabaseConnection)
 import Database.SQLite.Simple (Connection)
 import Network.Socket (Socket)
 import Network.Socket.ByteString (recv, send)
 import Service.Parse (parseUserData, parseUserName)
 import Service.Render (renderUser, renderUsers)
-import Database (deleteUser, getUser, getUsers, saveUser, updateUser, HasConnection)
 
 -- | the simplest form of an handler
 type RawHandler m = ByteString -> MaybeT m ByteString
@@ -50,7 +55,7 @@ type Controller m = [Handler m]
 runController :: Monad m => Controller m -> RawHandler m
 runController = runRawHandlers . fmap runHandler
 
-queryController :: Controller (HasConnection IO)
+queryController :: DatabaseConnection m => [Handler m]
 queryController =
   [ Handler
       do void $ string "\r\n"
@@ -62,10 +67,10 @@ queryController =
       do renderUser
   ]
 
-editController :: Controller (HasConnection IO)
+editController :: DatabaseConnection m  => [Handler m]
 editController =
   [ Handler
-      do string "+" >> space >> parseUserData 
+      do string "+" >> space >> parseUserData
       do saveUser
       do \b -> if b then "Ok" else "Could not create user"
   , Handler
@@ -76,8 +81,7 @@ editController =
       do string "~" >> space >> parseUserData
       do updateUser
       do \b -> if b then "Ok" else "Could not update user"
-
-    ]
+  ]
 
 hoistHandler :: (forall a. m a -> n a) -> Handler m -> Handler n
 hoistHandler f (Handler p g r) = Handler p (f . g) r

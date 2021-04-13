@@ -41,6 +41,7 @@ dependencies:
 - transformers 
 - unordered-containers
 - cmdargs
+- stm 
 - mmorph
 
 library:
@@ -57,46 +58,3 @@ executables:
     dependencies:
     - fingerd
 
-tests:
-  unit:
-    main: Spec.hs
-    source-dirs: test/unit
-    ghc-options:
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
-    dependencies:
-      - HUnit
-      - test-framework
-      - test-framework-hunit
-      - hspec
-      - programminghaskell
-
-  integration:
-    main: Spec.hs
-    source-dirs: test/integration
-    ghc-options:
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
-    dependencies:
-      - HUnit
-      - test-framework
-      - test-framework-hunit
-      - hspec
-      - fingerd
-      - threads
-
-default-extensions:
-  - TypeSynonymInstances
-  - FlexibleInstances
-  - MonadComprehensions
-  - FlexibleContexts
-  - RankNTypes
-  - TypeOperators
-  - UndecidableInstances
-  - MultiParamTypeClasses
-  - FunctionalDependencies
-  - OverloadedStrings
-  - LambdaCase
-  - TupleSections

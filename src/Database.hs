@@ -1,41 +1,45 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE OverloadedStrings #-}
 
+{-# LANGUAGE FlexibleContexts #-}
 module Database where
 
+import AccessControl
 import Control.Applicative
+import Control.Concurrent.STM
 import Control.Exception (Exception, bracket, throw)
-import Control.Monad.Managed (MonadManaged, liftIO, managed)
+import Control.Monad.Managed (Managed, MonadManaged, liftIO, managed)
+import Control.Monad.Morph (MFunctor (..))
 import Control.Monad.Reader
   ( MonadIO (liftIO)
   , MonadReader (ask)
-  , ReaderT (runReaderT)
+  , ReaderT (ReaderT, runReaderT)
   )
 import Data.Functor (($>))
-import Data.Text (Text)
+import Data.Text (Text, singleton)
 import Database.SQLite.Simple
-    ( Connection,
-      close,
-      execute,
-      open,
-      query,
-      field,
-      Only(Only),
-      FromRow(..),
-      ToRow(..),
-      Query )
+  ( Connection
+  , FromRow (..)
+  , Only (Only)
+  , Query
+  , ToRow (..)
+  , close
+  , execute
+  , field
+  , open
+  , query
+  , withConnection
+  )
 import Database.SQLite.Simple.QQ (sql)
-import User ( UserData(..), User(User, userData), UserName )
+import User (User (User, userData), UserData (..), UserName)
 
--- | open the SQLite database and create a connection pool
-newDB :: MonadManaged m => FilePath -> m Connection
-newDB fp = managed $ bracket
-  do open fp
-  do close
-
-type HasConnection m = ReaderT Connection m
 
 instance FromRow UserData where
   fromRow =
@@ -50,7 +54,7 @@ instance FromRow User where
     User <$> field
       <*> fromRow
 
-instance ToRow UserData where 
+instance ToRow UserData where
   toRow (UserData username shell homeDir realName phone) =
     toRow
       ( username
@@ -60,20 +64,23 @@ instance ToRow UserData where
       , phone
       )
 
-queryM :: (MonadReader Connection m, MonadIO m, ToRow q, FromRow r) => Query -> q -> m [r]
-queryM q x = ask >>= \conn -> liftIO $ query conn q x
+type DatabaseConnection m = (HasAccessControl Connection m, MonadIO m)
 
-executeM :: (MonadReader Connection m, MonadIO m, ToRow q) => Query -> q -> m ()
-executeM q x = ask >>= \conn -> liftIO $ execute conn q x
+queryM :: (DatabaseConnection m, ToRow q, FromRow r) => Query -> q -> m [r]
+queryM q x = ask >>= \AccessController {..} -> controllingAccess $ \conn -> liftIO $ query conn q x
 
-executeM_ :: (MonadReader Connection m, MonadIO m) => Query -> m ()
+executeM :: (DatabaseConnection m, ToRow q) => Query -> q -> m ()
+executeM q x = ask >>= \AccessController {..} -> controllingAccess $ \conn -> liftIO $ execute conn q x
+
+executeM_ :: (DatabaseConnection m) => Query -> m ()
 executeM_ q = executeM q ()
+
 data DuplicateData = DuplicateData deriving (Eq, Show, Exception)
 
-createDatabase :: HasConnection IO ()
+createDatabase :: DatabaseConnection m => m ()
 createDatabase =
-    executeM_
-      [sql|
+  executeM_
+    [sql|
         CREATE TABLE IF NOT EXISTS users
             ( id INTEGER PRIMARY KEY AUTOINCREMENT
             , username TEXT UNIQUE
@@ -84,7 +91,7 @@ createDatabase =
             )
         |]
 
-getUser :: UserName -> HasConnection IO (Maybe User)
+getUser :: DatabaseConnection m => UserName -> m (Maybe User)
 getUser username = do
   results <- queryM "SELECT * from users where username = ?" $ Only username
   case results of
@@ -92,17 +99,17 @@ getUser username = do
     [user] -> pure $ Just user
     _ -> throw DuplicateData
 
-getUsers :: HasConnection IO [UserName]
+getUsers :: DatabaseConnection m => m [UserName]
 getUsers = fmap (username . userData) <$> queryM "SELECT * from users" ()
 
-saveUser :: UserData -> HasConnection IO Bool
+saveUser :: DatabaseConnection m => UserData -> m Bool
 saveUser userData@UserData {..} = do
-  existingUser <- getUser username 
+  existingUser <- getUser username
   case existingUser of
     Nothing -> executeM "INSERT INTO users VALUES (null, ?, ?, ?, ?, ?)" userData $> True
     _ -> pure False
 
-updateUser :: UserData -> HasConnection IO Bool
+updateUser :: DatabaseConnection m => UserData -> m Bool
 updateUser UserData {..} = do
   existingUser <- getUser username
   case existingUser of
@@ -113,7 +120,7 @@ updateUser UserData {..} = do
         (shell, homeDirectory, realName, phone, username)
         $> True
 
-deleteUser :: UserName -> HasConnection IO Bool
+deleteUser :: DatabaseConnection m => UserName -> m Bool
 deleteUser userName = do
   existingUser <- getUser userName
   case existingUser of

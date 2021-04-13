@@ -1,5 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module TCPServer where
@@ -43,11 +44,12 @@ server port withSocket = withSocketsDo $ do
       listen sock 1
       pure sock
     do close
-    do \sock -> fix \loop -> do
-          asock <- fst <$> accept sock
-          withAsync
-            do
-              finally
-                do send asock "hello\n" >> withSocket asock
-                do send asock "bye\n" >> close asock
-            do \fork -> link fork >> loop
+    do
+      \sock -> fix \loop -> do
+        asock <- fst <$> accept sock
+        withAsync
+          do
+            finally
+              do send asock "hello\n" >> withSocket asock
+              do send asock "bye\n" >> close asock
+          do \fork -> link fork >> loop

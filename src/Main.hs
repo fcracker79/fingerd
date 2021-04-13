@@ -2,28 +2,43 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main where
 
+import AccessControl
 import Control.Concurrent.Async (waitBoth, withAsync)
 import Control.Exception (finally)
 import Control.Monad (void)
-import Control.Monad.Catch (catch, catchAll)
+import Control.Monad.Catch (catchAll)
 import Control.Monad.Managed (Managed, liftIO, managed, runManaged)
-import Control.Monad.Morph
+import Control.Monad.Morph (hoist)
 import Control.Monad.Reader
+  ( MonadIO (liftIO)
+  , ReaderT (runReaderT)
+  , fix
+  , void
+  )
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Data (Data, Typeable)
 import Data.Maybe (fromMaybe)
-import Database (createDatabase, newDB)
-import TCPServer (server)
+import Database
+  ( createDatabase
+  )
+import Database.SQLite.Simple (Connection, withConnection)
 import Network.Socket (Socket)
 import Network.Socket.ByteString (recv, send)
 import Service.Controller (Controller, editController, hoistController, queryController, runController)
 import System.Console.CmdArgs (cmdArgs, def, help, opt, summary, (&=))
+import TCPServer (server)
 import Text.Printf (printf)
 
-data Config = Config {queryPort :: String, editPort :: String, databasePath :: FilePath} deriving (Show, Data, Typeable)
+data Config = Config
+  { queryPort :: String
+  , editPort :: String
+  , databasePath :: FilePath
+  }
+  deriving (Show, Data, Typeable)
 
 config :: Config
 config =
@@ -39,17 +54,18 @@ main = catchAll
   do
     Config {..} <- cmdArgs config
     runManaged do
-      connection <- newDB databasePath
-      let withConnection = liftIO . flip runReaderT connection
-      withConnection createDatabase
+      connection <- managed (withConnection databasePath) >>= fairSingleThreading
+      runAccessControl connection createDatabase
       queryA <-
         managed $
           withAsync $
-            server queryPort $ runManaged . serve (hoistController withConnection queryController)
+            server queryPort $
+              runManaged . serve (hoistController (runAccessControl connection) queryController)
       editA <-
         managed $
           withAsync $
-            server editPort $ runManaged . serve (hoistController withConnection editController)
+            server editPort $
+              runManaged . serve (hoistController (runAccessControl connection) editController)
       liftIO $
         printf
           "Fingerd up: derving on ports %s + %s, database open at \"%s\"\n"

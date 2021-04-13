@@ -1,3 +1,5 @@
+
+{-# LANGUAGE OverloadedStrings #-}
 module Service.Render where
 
 import Data.ByteString.Char8 (ByteString)
