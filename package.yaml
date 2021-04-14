@@ -43,6 +43,7 @@ dependencies:
 - cmdargs
 - stm 
 - mmorph
+- HUnit
 
 library:
   source-dirs: src

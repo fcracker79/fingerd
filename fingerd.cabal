@@ -27,18 +27,20 @@ library
   exposed-modules:
       AccessControl
       Database
+      Lib.SQLiteSafe
+      Lib.TCPServer
       Main
       Service.Controller
       Service.Parse
       Service.Render
-      TCPServer
       User
   other-modules:
       Paths_fingerd
   hs-source-dirs:
       src
   build-depends:
-      aeson
+      HUnit
+    , aeson
     , async
     , attoparsec
     , base >=4.7 && <5
@@ -69,7 +71,8 @@ executable fingerd
       Paths_fingerd
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
   build-depends:
-      aeson
+      HUnit
+    , aeson
     , async
     , attoparsec
     , base >=4.7 && <5

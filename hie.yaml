@@ -1,2 +1,10 @@
 cradle:
   stack:
+    - path: "./src"
+      component: "fingerd:lib"
+
+    - path: "././src/Main.hs"
+      component: "fingerd:exe:fingerd"
+
+    - path: "././Paths_fingerd.hs"
+      component: "fingerd:exe:fingerd"

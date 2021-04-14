@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module TCPServer where
+module Lib.TCPServer where
 
 import Control.Concurrent.Async
 import Control.Exception (bracket, finally)

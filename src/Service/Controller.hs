@@ -20,7 +20,7 @@ import Data.Functor ((<&>))
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Database ( deleteUser, getUser, getUsers, saveUser, updateUser, DatabaseConnection)
+import Database ( deleteUser, getUser, getUsers, saveUser, updateUser, WithDB)
 import Database.SQLite.Simple (Connection)
 import Network.Socket (Socket)
 import Network.Socket.ByteString (recv, send)
@@ -55,7 +55,7 @@ type Controller m = [Handler m]
 runController :: Monad m => Controller m -> RawHandler m
 runController = runRawHandlers . fmap runHandler
 
-queryController :: DatabaseConnection m => [Handler m]
+queryController :: [Handler WithDB]
 queryController =
   [ Handler
       do void $ string "\r\n"
@@ -67,7 +67,7 @@ queryController =
       do renderUser
   ]
 
-editController :: DatabaseConnection m  => [Handler m]
+editController ::  [Handler WithDB]
 editController =
   [ Handler
       do string "+" >> space >> parseUserData

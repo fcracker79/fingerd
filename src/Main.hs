@@ -1,8 +1,10 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Main where
 
@@ -23,14 +25,17 @@ import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Data (Data, Typeable)
 import Data.Maybe (fromMaybe)
 import Database
-  ( createDatabase
+  ( WithDB
+  , createDatabase
+  , withDB
   )
 import Database.SQLite.Simple (Connection, withConnection)
+import Lib.SQLiteSafe (SQLiteSafe, openSqliteSafe)
+import Lib.TCPServer (server)
 import Network.Socket (Socket)
 import Network.Socket.ByteString (recv, send)
 import Service.Controller (Controller, editController, hoistController, queryController, runController)
 import System.Console.CmdArgs (cmdArgs, def, help, opt, summary, (&=))
-import TCPServer (server)
 import Text.Printf (printf)
 
 data Config = Config
@@ -54,21 +59,21 @@ main = catchAll
   do
     Config {..} <- cmdArgs config
     runManaged do
-      connection <- managed (withConnection databasePath) >>= fairSingleThreading
-      runAccessControl connection createDatabase
+      sqliteSafe <- managed (openSqliteSafe databasePath)
+      liftIO $ withDB sqliteSafe createDatabase
       queryA <-
         managed $
           withAsync $
             server queryPort $
-              runManaged . serve (hoistController (runAccessControl connection) queryController)
+              serve (hoistController (withDB sqliteSafe) queryController)
       editA <-
         managed $
           withAsync $
             server editPort $
-              runManaged . serve (hoistController (runAccessControl connection) editController)
+              serve (hoistController (withDB sqliteSafe) $ editController <> queryController)
       liftIO $
         printf
-          "Fingerd up: derving on ports %s + %s, database open at \"%s\"\n"
+          "Fingerd up: serving on ports %s + %s, database open at \"%s\"\n"
           queryPort
           editPort
           databasePath
@@ -79,9 +84,9 @@ main = catchAll
       putStrLn "bye"
 
 serve
-  :: Controller Managed
+  :: Controller IO
   -> Socket
-  -> Managed ()
+  -> IO ()
 serve controller soc = fix \loop -> do
   liftIO $ send soc "> "
   msg <- liftIO $ recv soc 1024
