@@ -3,8 +3,10 @@
 
 module Lib.SQLiteSafe where
 
+import Control.Concurrent.Async (async, link)
 import Control.Concurrent.STM (atomically)
-import Control.Monad (forever, when)
+import Control.Exception (throwIO)
+import Control.Monad (forever, join, when)
 import Control.Monad.Catch (SomeException, bracket, catchAll)
 import Data.Functor (($>))
 import Data.Traversable (forM)
@@ -21,8 +23,6 @@ import Lib.STM
   , waitBaton
   , waitGreen
   )
-import Control.Exception (throwIO)
-import Control.Concurrent.Async (async, link)
 
 -- | control baton passing
 data SQLiteSafe = SQLiteSafe
@@ -61,17 +61,14 @@ sqliteSafe conn handle = do
     do DB.query conn
     do
       \q p -> do
-        waiting <-
+        join $
           atomically $ do
             waiting <- newEmptyBaton
             enterQueue queue waiting
-            pure waiting
-        atomically $ waitBaton waiting
+                $> atomically (waitBaton waiting)
         catchAll
-          do
-            DB.execute conn q p
-            restore
-          do \e -> restore >> handle e
+          do DB.execute conn q p *>  restore
+          do \e -> restore *> handle e
 
 openSqliteSafe
   :: FilePath
