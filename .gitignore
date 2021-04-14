@@ -1,3 +1,4 @@
 *.swp
 .stack-work
 finger.db
+src/test.md

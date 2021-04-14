@@ -3,20 +3,26 @@
 
 module Lib.SQLiteSafe where
 
-import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (async, link, wait, withAsync)
-import Control.Concurrent.STM
+import Control.Concurrent.STM (atomically)
 import Control.Monad (forever, when)
-import Control.Monad.Catch (SomeException, catchAll)
-import Data.Foldable (traverse_)
+import Control.Monad.Catch (SomeException, bracket, catchAll)
 import Data.Functor (($>))
 import Data.Traversable (forM)
-import Database.SQLite.Simple (Connection, FromRow, Query, ToRow, open, close)
+import Database.SQLite.Simple (Connection, FromRow, Query, ToRow, close, open)
 import qualified Database.SQLite.Simple as DB
-import System.Random (Random (randomIO, randomRIO))
-import Test.HUnit ((@?=))
-import Control.Monad.Catch.Pure (bracket)
+import Lib.STM
+  ( enterQueue
+  , exitQueue
+  , newEmptyBaton
+  , newQueue
+  , newSemaphore
+  , passBaton
+  , setGreen
+  , waitBaton
+  , waitGreen
+  )
 import Control.Exception (throwIO)
+import Control.Concurrent.Async (async, link)
 
 -- | control baton passing
 data SQLiteSafe = SQLiteSafe
@@ -42,39 +48,40 @@ sqliteSafe
   -> (SomeException -> IO ()) -- ^ handler for exceptions
   -> IO SQLiteSafe
 sqliteSafe conn handle = do
-  store <- newTMVarIO conn
-  queue <- newTChanIO
+  sem <- atomically newSemaphore
+  queue <- atomically newQueue
   server <- async $
     forever $
       atomically $ do
-        waiting <- readTChan queue
-        takeTMVar store >>= putTMVar waiting
+        waiting <- exitQueue queue
+        waitGreen sem >>= passBaton waiting
   link server
-  let restore f = atomically . f store
+  let restore = atomically $ setGreen sem
   pure $ SQLiteSafe
     do DB.query conn
     do
       \q p -> do
         waiting <-
           atomically $ do
-            waiting <- newEmptyTMVar
-            writeTChan queue waiting
+            waiting <- newEmptyBaton
+            enterQueue queue waiting
             pure waiting
-        conn <- atomically $ takeTMVar waiting
+        atomically $ waitBaton waiting
         catchAll
           do
             DB.execute conn q p
-            restore putTMVar conn
-          do \e -> restore tryPutTMVar conn >> handle e
+            restore
+          do \e -> restore >> handle e
 
 openSqliteSafe
   :: FilePath
   -> (SQLiteSafe -> IO r)
   -> IO r
-openSqliteSafe path action  = bracket 
-  do open path 
-  do close 
-  do \conn  -> do 
-      safe <- sqliteSafe conn throwIO 
+openSqliteSafe path action = bracket
+  do open path
+  do close
+  do
+    \conn -> do
+      safe <- sqliteSafe conn throwIO
       result <- action safe
-      close conn $> result 
+      close conn $> result

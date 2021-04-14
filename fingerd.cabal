@@ -28,6 +28,7 @@ library
       AccessControl
       Database
       Lib.SQLiteSafe
+      Lib.STM
       Lib.TCPServer
       Main
       Service.Controller
